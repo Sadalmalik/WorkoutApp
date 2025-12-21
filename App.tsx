@@ -1,8 +1,9 @@
-import React, { useState, useEffect, useMemo } from 'react';
-import { Settings, Dumbbell, ExternalLink, List, X } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { Settings, Dumbbell, ExternalLink, List, X, CloudUpload } from 'lucide-react';
 import Timer from './components/Timer';
 import SetLogger from './components/SetLogger';
 import { fetchSheetData, submitToGoogleForm } from './services/googleSheetsService';
+import * as QueueService from './services/queueService';
 import { AppState, ExerciseDefinition, ScheduledExercise, SheetConfig, WorkoutResult } from './types';
 
 // Constants
@@ -18,7 +19,8 @@ export const App: React.FC = () => {
     spreadsheetId: localStorage.getItem('sheetId') || '',
     apiKey: localStorage.getItem('apiKey') || '',
     googleFormId: localStorage.getItem('googleFormId') || '',
-    fieldMapping: JSON.parse(localStorage.getItem('fieldMapping') || '{}')
+    fieldMapping: JSON.parse(localStorage.getItem('fieldMapping') || '{}'),
+    retryInterval: parseInt(localStorage.getItem('retryInterval') || '5', 10)
   });
   
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
@@ -34,28 +36,104 @@ export const App: React.FC = () => {
   
   // Current session data
   const [currentSets, setCurrentSets] = useState<{weight: number, reps: number}[]>([]);
+
+  // Queue State
+  const [queueLength, setQueueLength] = useState<number>(0);
   
   // UI State
   const [showSettings, setShowSettings] = useState(false);
   const [showExerciseSelector, setShowExerciseSelector] = useState(false);
   const [filterText, setFilterText] = useState('');
 
+  // Refs for background processing
+  const isProcessingRef = useRef(false);
+  const retryTimeoutRef = useRef<number | null>(null);
+  const configRef = useRef(config);
+
   // --- Effects ---
 
-  // Initial load
+  // Keep config ref updated for background process
   useEffect(() => {
+    configRef.current = config;
+  }, [config]);
+
+  // Initial load and queue check
+  useEffect(() => {
+    // Load initial queue state
+    setQueueLength(QueueService.getQueueLength());
+
+    // Start processing if items exist
+    processQueue();
+
     if (config.spreadsheetId && config.apiKey) {
       loadData();
     } else {
       setShowSettings(true);
     }
+    
+    // Cleanup timeout on unmount
+    return () => {
+      if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+    };
   }, []);
 
-  // Compute derived state for display
+  // --- Background Queue Processing ---
+
+  const processQueue = async () => {
+    // Prevent concurrent processing
+    if (isProcessingRef.current) return;
+
+    // Check if there is anything to process
+    let currentQ = QueueService.getQueue();
+    if (currentQ.length === 0) return;
+
+    isProcessingRef.current = true;
+    console.log(`Starting queue processing. ${currentQ.length} items pending.`);
+
+    try {
+      // Loop until queue is empty or a failure occurs
+      while (currentQ.length > 0) {
+        const item = currentQ[0];
+        const success = await submitToGoogleForm(configRef.current, item);
+
+        if (success) {
+          console.log("Item submitted successfully.");
+          QueueService.dequeue();
+          setQueueLength(prev => Math.max(0, prev - 1));
+          // Refresh local reference
+          currentQ = QueueService.getQueue();
+        } else {
+          console.warn(`Submission failed. Retrying in ${configRef.current.retryInterval} minutes.`);
+          // Stop processing loop
+          scheduleRetry();
+          return; 
+        }
+      }
+    } finally {
+      // Only release lock if we are NOT scheduling a retry (which exits early)
+      // Actually, if we return early due to failure, we still need to release lock?
+      // No, if we schedule retry, the retry callback will eventually call processQueue again.
+      // But we should reset 'isProcessing' so the retry call can enter.
+      isProcessingRef.current = false;
+    }
+  };
+
+  const scheduleRetry = () => {
+    if (retryTimeoutRef.current) clearTimeout(retryTimeoutRef.current);
+    const intervalMs = (configRef.current.retryInterval || 5) * 60 * 1000;
+    
+    // @ts-ignore: Window/Node timeout types mismatch
+    retryTimeoutRef.current = setTimeout(() => {
+      console.log("Retry timer fired. Attempting to process queue.");
+      processQueue();
+    }, intervalMs);
+  };
+
+  // --- Compute derived state ---
+  
   const today = new Date();
   const todayWeekday = WEEKDAYS[today.getDay()];
   
-  // The active exercise is either the manual override OR the current one in the queue
   const activeExercise: ScheduledExercise | null = manualExercise 
     ? manualExercise 
     : (dailyQueue.length > 0 && currentQueueIndex < dailyQueue.length) 
@@ -92,36 +170,35 @@ export const App: React.FC = () => {
     localStorage.setItem('apiKey', config.apiKey);
     localStorage.setItem('googleFormId', config.googleFormId);
     localStorage.setItem('fieldMapping', JSON.stringify(config.fieldMapping));
+    localStorage.setItem('retryInterval', config.retryInterval.toString());
+    
     setShowSettings(false);
     loadData();
+    // Trigger queue process in case settings fixed a previous error
+    processQueue();
   };
 
   const handleManualSelect = (exName: string) => {
-    // Create a generic scheduled exercise from the definition
     const def = definitions.get(exName);
     const newEx: ScheduledExercise = {
       name: exName,
-      sets: 3, // Default
+      sets: 3, 
       recWeight: 0,
       recReps: 0
     };
     setManualExercise(newEx);
-    setCurrentSets([]); // Clear current progress
+    setCurrentSets([]); 
     setShowExerciseSelector(false);
   };
 
-  const handleSubmit = async () => {
+  const handleSubmit = () => {
     if (!activeExercise) return;
 
-    setAppState(AppState.LOADING);
-
-    // 1. Submit to Google Form
-    const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
+    // 1. Enqueue Items Only (No direct submit)
+    const dateStr = today.toISOString().split('T')[0]; 
     
-    // Process each set sequentially
-    for (let i = 0; i < currentSets.length; i++) {
-      const set = currentSets[i];
-      const result: WorkoutResult = {
+    currentSets.forEach((set, i) => {
+       const result: WorkoutResult = {
         date: dateStr,
         weekday: todayWeekday,
         setNumber: i + 1,
@@ -131,22 +208,23 @@ export const App: React.FC = () => {
         actWeight: set.weight,
         actReps: set.reps
       };
-      
-      await submitToGoogleForm(config, result);
-    }
+      QueueService.enqueue(result);
+    });
 
-    // 2. Logic Update
-    setCurrentSets([]); // Clear table
+    // Update UI count
+    setQueueLength(QueueService.getQueueLength());
+    
+    // Trigger background process (non-blocking)
+    processQueue();
+
+    // 2. Logic Update (Advance UI immediately)
+    setCurrentSets([]); 
 
     if (manualExercise) {
-      // If we finished a manual exercise, go back to the queue (or completed state)
       setManualExercise(null);
     } else {
-      // Advance the queue
       setCurrentQueueIndex(prev => prev + 1);
     }
-
-    setAppState(AppState.WORKOUT);
   };
 
   // --- Render Helpers ---
@@ -156,6 +234,8 @@ export const App: React.FC = () => {
       <div className="fixed inset-0 z-50 bg-white flex flex-col p-6 overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">Settings</h2>
         <div className="space-y-6 pb-6">
+          
+          {/* Google Sheets Config */}
           <div className="space-y-4 border-b pb-4">
             <h3 className="font-semibold text-gray-900">Google Sheets (Read Only)</h3>
             <div>
@@ -180,6 +260,7 @@ export const App: React.FC = () => {
             </div>
           </div>
 
+          {/* Google Forms Config */}
           <div className="space-y-4">
              <h3 className="font-semibold text-gray-900">Google Forms (Submission)</h3>
              <div>
@@ -191,13 +272,23 @@ export const App: React.FC = () => {
                 onChange={e => setConfig({...config, googleFormId: e.target.value})}
                 placeholder="e.g. 1FAIpQLSe..."
               />
-              <p className="text-xs text-gray-500 mt-1">Found in the URL of your Google Form.</p>
+            </div>
+            
+            <div className="flex items-center justify-between">
+              <label className="block text-sm font-medium text-gray-700">Retry Interval (Minutes)</label>
+              <input 
+                type="number" 
+                min="1"
+                className="w-20 border border-gray-300 rounded-md shadow-sm p-2 text-center"
+                value={config.retryInterval}
+                onChange={e => setConfig({...config, retryInterval: parseInt(e.target.value) || 5})}
+              />
             </div>
 
             <div className="bg-gray-50 p-3 rounded-lg border">
               <div className="text-sm font-medium mb-2 text-gray-700">Field Mapping (entry IDs)</div>
               <p className="text-xs text-gray-500 mb-3">
-                Enter the 'entry.XXXX' ID for each field. You can find these by creating a "pre-filled link" in Google Forms.
+                Enter the 'entry.XXXX' ID for each field.
               </p>
               <div className="space-y-2">
                 {RESULT_FIELDS.map(field => (
@@ -226,7 +317,6 @@ export const App: React.FC = () => {
             >
               Save & Load
             </button>
-            {/* Close button if we already have data loaded */}
             {appState !== AppState.IDLE && (
               <button 
                  onClick={() => setShowSettings(false)}
@@ -280,14 +370,25 @@ export const App: React.FC = () => {
     <div className="flex flex-col h-full bg-gray-50">
       
       {/* Top Control Panel */}
-      <div className="flex justify-between items-center p-4 bg-white shadow-sm z-10">
+      <div className="flex justify-between items-center p-4 bg-white shadow-sm z-10 relative">
         <button 
           onClick={() => setShowExerciseSelector(true)}
           className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
         >
           <List size={24} className="text-gray-700" />
         </button>
-        <h1 className="text-sm font-bold text-blue-600">FitSheet Tracker</h1>
+        
+        <div className="flex flex-col items-center">
+           <h1 className="text-sm font-bold text-blue-600">FitSheet Tracker</h1>
+           {/* Queue Indicator */}
+           {queueLength > 0 && (
+             <div className="flex items-center space-x-1 mt-1 animate-pulse">
+               <CloudUpload size={14} className="text-orange-500" />
+               <span className="text-xs font-medium text-orange-500">{queueLength} pending</span>
+             </div>
+           )}
+        </div>
+
         <button 
           onClick={() => setShowSettings(true)}
           className="p-2 bg-gray-100 rounded-full hover:bg-gray-200"
@@ -390,7 +491,7 @@ export const App: React.FC = () => {
                     Submit Exercise
                   </button>
                   <p className="text-center text-xs text-gray-400 mt-2">
-                    Submits sets to Google Forms and loads next exercise
+                    Queues results for background submission
                   </p>
                 </div>
               </div>
@@ -398,5 +499,6 @@ export const App: React.FC = () => {
           </>
         )}
       </div>
-    );
-  };
+    </div>
+  );
+};

@@ -31,6 +31,7 @@ export interface SheetConfig {
   apiKey: string;
   googleFormId: string;
   fieldMapping: Record<string, string>;
+  retryInterval: number;
 }
 
 // Internal app state for the current workflow
