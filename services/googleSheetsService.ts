@@ -11,11 +11,12 @@ export const fetchSheetData = async (config: SheetConfig) => {
   }
 
   // Batch get both Exercise List and Workout Program
-  // Exercise List: A:C (Assume header row 1, reasonable max row 1000)
-  // Workout Program: A:D (Assume 8 rows * 7 days + header = ~60 rows)
+  // Exercise List: Column A to C
+  // Workout Program: Column A to D
+  // We fetch the entire columns to ensure we get all data, then skip the header in parsing.
   const ranges = [
-    "'Exercise List'!A2:C100", 
-    "'Workout Program'!A2:D57" // 7 days * 8 rows + 1 header = 57
+    "'Exercise List'!A:C", 
+    "'Workout Program'!A:D"
   ];
   
   const url = `${BASE_URL}/${config.spreadsheetId}/values:batchGet?key=${config.apiKey}&ranges=${ranges.join('&ranges=')}`;
@@ -36,7 +37,10 @@ const parseSheetData = (data: any) => {
   const valueRanges = data.valueRanges;
   
   // 1. Parse Exercise List
-  const exerciseRows = valueRanges[0].values || [];
+  // Skip the first row (Header)
+  const rawExerciseRows = valueRanges[0].values || [];
+  const exerciseRows = rawExerciseRows.slice(1); 
+  
   const exerciseDefinitions = new Map<string, ExerciseDefinition>();
   
   exerciseRows.forEach((row: string[]) => {
@@ -50,11 +54,14 @@ const parseSheetData = (data: any) => {
   });
 
   // 2. Parse Workout Program
+  // Skip the first row (Header)
+  const rawProgramRows = valueRanges[1].values || [];
+  const programRows = rawProgramRows.slice(1);
+  
   // Structure: 8 rows per day, Mon-Sun.
-  // Row 0 in values is Row 2 in Sheet (Header skipped).
+  // We expect blocks of 8 rows. 
   // Mon: Index 0-7, Tue: 8-15, ... Sun: 48-55
   
-  const programRows = valueRanges[1].values || [];
   const programByDay = new Map<string, ScheduledExercise[]>();
   
   // Shift mapping: JS Sunday is 0, Sheet Monday is first block.

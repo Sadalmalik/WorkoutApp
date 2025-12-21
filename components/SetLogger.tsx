@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { Plus } from 'lucide-react';
+import { Plus, X } from 'lucide-react';
 import { ScheduledExercise } from '../types';
 
 interface SetData {
@@ -24,10 +24,19 @@ const SetLogger: React.FC<SetLoggerProps> = ({ exercise, onSetsChanged, currentS
     if (!isNaN(w) && !isNaN(r)) {
       const newSets = [...currentSets, { weight: w, reps: r }];
       onSetsChanged(newSets);
-      // Clear inputs (optional, or keep last values for convenience? Prompt says "Clears input fields")
-      setWeightInput('');
+      
+      // We do NOT clear weightInput to preserve it for the next set
+      // setWeightInput(''); 
+      
+      // We clear repsInput as usual
       setRepsInput('');
     }
+  };
+
+  const handleDeleteSet = (index: number) => {
+    const newSets = [...currentSets];
+    newSets.splice(index, 1);
+    onSetsChanged(newSets);
   };
 
   const adjustInput = (setter: React.Dispatch<React.SetStateAction<string>>, value: string, delta: number) => {
@@ -45,12 +54,13 @@ const SetLogger: React.FC<SetLoggerProps> = ({ exercise, onSetsChanged, currentS
               <th className="py-2">Set</th>
               <th className="py-2">Weight <span className="text-gray-400">({exercise.recWeight})</span></th>
               <th className="py-2">Reps <span className="text-gray-400">({exercise.recReps})</span></th>
+              <th className="py-2 w-10"></th> {/* Action column */}
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {currentSets.length === 0 ? (
               <tr>
-                <td colSpan={3} className="py-4 text-sm text-gray-400 italic">No sets recorded</td>
+                <td colSpan={4} className="py-4 text-sm text-gray-400 italic">No sets recorded</td>
               </tr>
             ) : (
               currentSets.map((set, idx) => (
@@ -58,6 +68,15 @@ const SetLogger: React.FC<SetLoggerProps> = ({ exercise, onSetsChanged, currentS
                   <td className="py-2 text-gray-500 text-sm">{idx + 1}</td>
                   <td className="py-2 font-medium">{set.weight}</td>
                   <td className="py-2 font-medium">{set.reps}</td>
+                  <td className="py-2 flex justify-center">
+                    <button 
+                      onClick={() => handleDeleteSet(idx)}
+                      className="text-gray-400 hover:text-red-500 p-1"
+                      aria-label="Delete set"
+                    >
+                      <X size={16} />
+                    </button>
+                  </td>
                 </tr>
               ))
             )}

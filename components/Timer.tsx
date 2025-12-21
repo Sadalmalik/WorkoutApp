@@ -9,8 +9,7 @@ const Timer: React.FC<TimerProps> = ({ defaultDuration = 120 }) => {
   const [duration, setDuration] = useState(defaultDuration);
   const [timeLeft, setTimeLeft] = useState(defaultDuration);
   const [isRunning, setIsRunning] = useState(false);
-  const timerRef = useRef<number | null>(null);
-
+  
   // Sound effect
   const playSound = () => {
     // Simple beep using AudioContext or generic HTML5 audio
@@ -27,21 +26,30 @@ const Timer: React.FC<TimerProps> = ({ defaultDuration = 120 }) => {
 
   // Timer logic
   useEffect(() => {
+    let interval: number | null = null;
+    
     if (isRunning && timeLeft > 0) {
-      timerRef.current = window.setTimeout(() => {
-        setTimeLeft((prev) => prev - 1);
+      interval = window.setInterval(() => {
+        setTimeLeft((prev) => {
+          if (prev <= 1) {
+             // Will reach 0
+             return 0;
+          }
+          return prev - 1;
+        });
       }, 1000);
     } else if (timeLeft === 0 && isRunning) {
-      // Finished
+      // Finished logic
       setIsRunning(false);
       playSound();
-      setTimeLeft(duration); // Reset to configured duration
+      // We do NOT reset to duration here immediately, 
+      // so the user sees '00:00' and the completed circle.
     }
 
     return () => {
-      if (timerRef.current) clearTimeout(timerRef.current);
+      if (interval) clearInterval(interval);
     };
-  }, [isRunning, timeLeft, duration]);
+  }, [isRunning, timeLeft]);
 
   // Handlers
   const toggleTimer = () => {
@@ -51,6 +59,10 @@ const Timer: React.FC<TimerProps> = ({ defaultDuration = 120 }) => {
       setTimeLeft(duration);
     } else {
       // Play pressed
+      if (timeLeft === 0) {
+        // If restarting from finished state, reset first
+        setTimeLeft(duration);
+      }
       setIsRunning(true);
     }
   };
@@ -75,7 +87,7 @@ const Timer: React.FC<TimerProps> = ({ defaultDuration = 120 }) => {
   // Progress fills clockwise: 
   // Full dasharray = circumference. 
   // Offset moves the gap. To fill clockwise from top, we need to reduce offset.
-  const progress = 1 - (timeLeft / duration);
+  const progress = duration > 0 ? (1 - (timeLeft / duration)) : 0;
   const strokeDashoffset = circumference * (1 - progress); // Inverted logic for filling
 
   return (
