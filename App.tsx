@@ -2,17 +2,23 @@ import React, { useState, useEffect, useMemo } from 'react';
 import { Settings, Dumbbell, ExternalLink, List, X } from 'lucide-react';
 import Timer from './components/Timer';
 import SetLogger from './components/SetLogger';
-import { fetchSheetData, writeResult } from './services/googleSheetsService';
+import { fetchSheetData, submitToGoogleForm } from './services/googleSheetsService';
 import { AppState, ExerciseDefinition, ScheduledExercise, SheetConfig, WorkoutResult } from './types';
 
 // Constants
 const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
+const RESULT_FIELDS: (keyof WorkoutResult)[] = [
+  'date', 'weekday', 'setNumber', 'exerciseName', 
+  'recWeight', 'recReps', 'actWeight', 'actReps'
+];
 
-const App: React.FC = () => {
+export const App: React.FC = () => {
   // --- State ---
   const [config, setConfig] = useState<SheetConfig>({
     spreadsheetId: localStorage.getItem('sheetId') || '',
-    apiKey: localStorage.getItem('apiKey') || ''
+    apiKey: localStorage.getItem('apiKey') || '',
+    googleFormId: localStorage.getItem('googleFormId') || '',
+    fieldMapping: JSON.parse(localStorage.getItem('fieldMapping') || '{}')
   });
   
   const [appState, setAppState] = useState<AppState>(AppState.IDLE);
@@ -84,6 +90,8 @@ const App: React.FC = () => {
   const handleSaveSettings = () => {
     localStorage.setItem('sheetId', config.spreadsheetId);
     localStorage.setItem('apiKey', config.apiKey);
+    localStorage.setItem('googleFormId', config.googleFormId);
+    localStorage.setItem('fieldMapping', JSON.stringify(config.fieldMapping));
     setShowSettings(false);
     loadData();
   };
@@ -107,7 +115,7 @@ const App: React.FC = () => {
 
     setAppState(AppState.LOADING);
 
-    // 1. Write to Sheet
+    // 1. Submit to Google Form
     const dateStr = today.toISOString().split('T')[0]; // YYYY-MM-DD
     
     // Process each set sequentially
@@ -124,9 +132,7 @@ const App: React.FC = () => {
         actReps: set.reps
       };
       
-      // We don't block the UI strictly on failure since we can't guarantee auth 
-      // in this simplified public-api context, but we try.
-      await writeResult(config, result);
+      await submitToGoogleForm(config, result);
     }
 
     // 2. Logic Update
@@ -147,46 +153,89 @@ const App: React.FC = () => {
 
   if (showSettings) {
     return (
-      <div className="fixed inset-0 z-50 bg-white flex flex-col p-6">
+      <div className="fixed inset-0 z-50 bg-white flex flex-col p-6 overflow-y-auto">
         <h2 className="text-2xl font-bold mb-4">Settings</h2>
-        <div className="space-y-4">
-          <div>
-            <label className="block text-sm font-medium text-gray-700">Google Sheet ID</label>
-            <input 
-              type="text" 
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-              value={config.spreadsheetId}
-              onChange={e => setConfig({...config, spreadsheetId: e.target.value})}
-              placeholder="e.g. 1BxiMVs0XRA5nFMdKbBdBwjcn..."
-            />
-            <p className="text-xs text-gray-500 mt-1">Found in the URL of your Google Sheet.</p>
+        <div className="space-y-6 pb-6">
+          <div className="space-y-4 border-b pb-4">
+            <h3 className="font-semibold text-gray-900">Google Sheets (Read Only)</h3>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">Google Sheet ID</label>
+              <input 
+                type="text" 
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                value={config.spreadsheetId}
+                onChange={e => setConfig({...config, spreadsheetId: e.target.value})}
+                placeholder="e.g. 1BxiMVs0XRA..."
+              />
+            </div>
+            <div>
+              <label className="block text-sm font-medium text-gray-700">API Key</label>
+              <input 
+                type="text" 
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                value={config.apiKey}
+                onChange={e => setConfig({...config, apiKey: e.target.value})}
+                placeholder="AIzaSy..."
+              />
+            </div>
           </div>
-          <div>
-            <label className="block text-sm font-medium text-gray-700">API Key</label>
-            <input 
-              type="text" 
-              className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
-              value={config.apiKey}
-              onChange={e => setConfig({...config, apiKey: e.target.value})}
-              placeholder="AIzaSy..."
-            />
-            <p className="text-xs text-gray-500 mt-1">Required to read the public sheet.</p>
+
+          <div className="space-y-4">
+             <h3 className="font-semibold text-gray-900">Google Forms (Submission)</h3>
+             <div>
+              <label className="block text-sm font-medium text-gray-700">Form ID</label>
+              <input 
+                type="text" 
+                className="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2"
+                value={config.googleFormId}
+                onChange={e => setConfig({...config, googleFormId: e.target.value})}
+                placeholder="e.g. 1FAIpQLSe..."
+              />
+              <p className="text-xs text-gray-500 mt-1">Found in the URL of your Google Form.</p>
+            </div>
+
+            <div className="bg-gray-50 p-3 rounded-lg border">
+              <div className="text-sm font-medium mb-2 text-gray-700">Field Mapping (entry IDs)</div>
+              <p className="text-xs text-gray-500 mb-3">
+                Enter the 'entry.XXXX' ID for each field. You can find these by creating a "pre-filled link" in Google Forms.
+              </p>
+              <div className="space-y-2">
+                {RESULT_FIELDS.map(field => (
+                   <div key={field} className="flex items-center justify-between">
+                     <span className="text-sm text-gray-700 capitalize w-1/3">{field}</span>
+                     <input 
+                        type="text" 
+                        placeholder="entry.123456"
+                        className="flex-1 border border-gray-300 rounded p-1 text-sm"
+                        value={config.fieldMapping[field] || ''}
+                        onChange={(e) => {
+                           const newMapping = { ...config.fieldMapping, [field]: e.target.value };
+                           setConfig({ ...config, fieldMapping: newMapping });
+                        }}
+                     />
+                   </div>
+                ))}
+              </div>
+            </div>
           </div>
-          <button 
-            onClick={handleSaveSettings}
-            className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold"
-          >
-            Save & Load
-          </button>
-          {/* Close button if we already have data loaded */}
-          {appState !== AppState.IDLE && (
+
+          <div className="flex flex-col space-y-3 pt-2">
             <button 
-               onClick={() => setShowSettings(false)}
-               className="w-full text-gray-600 p-3"
+              onClick={handleSaveSettings}
+              className="w-full bg-blue-600 text-white p-3 rounded-lg font-bold shadow-sm"
             >
-              Cancel
+              Save & Load
             </button>
-          )}
+            {/* Close button if we already have data loaded */}
+            {appState !== AppState.IDLE && (
+              <button 
+                 onClick={() => setShowSettings(false)}
+                 className="w-full text-gray-600 p-3"
+              >
+                Cancel
+              </button>
+            )}
+          </div>
         </div>
       </div>
     );
@@ -341,7 +390,7 @@ const App: React.FC = () => {
                     Submit Exercise
                   </button>
                   <p className="text-center text-xs text-gray-400 mt-2">
-                    Writes to "Results" tab and loads next exercise
+                    Submits sets to Google Forms and loads next exercise
                   </p>
                 </div>
               </div>
@@ -349,8 +398,5 @@ const App: React.FC = () => {
           </>
         )}
       </div>
-    </div>
-  );
-};
-
-export default App;
+    );
+  };

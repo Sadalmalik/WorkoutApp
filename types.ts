@@ -25,10 +25,12 @@ export interface WorkoutResult {
   actReps: number;
 }
 
-// Configuration for Google Sheets connection
+// Configuration for Google Sheets connection and Forms submission
 export interface SheetConfig {
   spreadsheetId: string;
   apiKey: string;
+  googleFormId: string;
+  fieldMapping: Record<string, string>;
 }
 
 // Internal app state for the current workflow

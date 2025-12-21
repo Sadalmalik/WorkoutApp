@@ -2,9 +2,6 @@ import { ExerciseDefinition, ScheduledExercise, SheetConfig, WorkoutResult } fro
 
 const BASE_URL = 'https://sheets.googleapis.com/v4/spreadsheets';
 
-// Helper to convert column letter to index if needed, though API uses A1 notation
-const WEEKDAYS = ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'];
-
 /**
  * Fetches the raw data from the sheet
  */
@@ -95,59 +92,37 @@ const parseSheetData = (data: any) => {
 };
 
 /**
- * Writes a result row to the sheet.
- * NOTE: Writing to Google Sheets via pure Client-Side API Key is NOT possible for security reasons.
- * You normally need OAuth2.
- * However, the prompt specifies "No authentication is required (the sheet is public)".
- * 
- * If the sheet is truly public (Anyone can edit), standard fetch to the API still requires an OAuth token usually.
- * For this implementation, we will try the standard API call. If it fails due to Auth, 
- * we will log it. In a real scenario with "No Auth", one might use a Google Apps Script Web App as a proxy.
- * 
- * We will assume for the sake of the requirements that the user might have an access token 
- * or the environment is permissive.
+ * Submits a result to Google Forms
  */
-export const writeResult = async (config: SheetConfig, result: WorkoutResult) => {
-  if (!config.spreadsheetId) return;
+export const submitToGoogleForm = async (config: SheetConfig, result: WorkoutResult) => {
+  if (!config.googleFormId || !config.fieldMapping) {
+    console.warn("Missing Google Form configuration");
+    return false;
+  }
 
-  const range = "'Results'!A:H";
-  const rowData = [
-    result.date,
-    result.weekday,
-    result.setNumber,
-    result.exerciseName,
-    result.recWeight,
-    result.recReps,
-    result.actWeight,
-    result.actReps
-  ];
+  const formUrl = `https://docs.google.com/forms/u/0/d/e/${config.googleFormId}/formResponse`;
+  const formData = new FormData();
 
-  const url = `${BASE_URL}/${config.spreadsheetId}/values/${range}:append?valueInputOption=USER_ENTERED&key=${config.apiKey}`;
-
-  // NOTE: This fetch will likely fail 401/403 without an Authorization header (Bearer token),
-  // even if the sheet is public. Public API keys are Read-Only.
-  // Since we cannot implement OAuth in this snippet without a backend or user login flow (which is prohibited),
-  // We will simulate the success for the UI flow if the API call fails due to Auth.
-  
-  try {
-    const response = await fetch(url, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-        // 'Authorization': `Bearer ${accessToken}` // This would be needed
-      },
-      body: JSON.stringify({
-        values: [rowData]
-      })
-    });
-
-    if (!response.ok) {
-        console.warn("Write failed (likely due to missing OAuth token for public API key). UI will proceed.");
-        return false;
+  // Map fields to form entries
+  // Iterate over the keys of the result object
+  (Object.keys(result) as Array<keyof WorkoutResult>).forEach((key) => {
+    const entryId = config.fieldMapping[key];
+    if (entryId) {
+      formData.append(entryId, String(result[key]));
     }
+  });
+
+  try {
+    // Google Forms submission needs mode: 'no-cors' when called from browser
+    // The response will be opaque (status 0), but the submission succeeds if URL/IDs are correct.
+    await fetch(formUrl, {
+      method: 'POST',
+      mode: 'no-cors',
+      body: formData
+    });
     return true;
   } catch (e) {
-    console.warn("Network error writing to sheet", e);
+    console.error("Form submission failed", e);
     return false;
   }
 };
