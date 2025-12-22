@@ -11,11 +11,11 @@ export const fetchSheetData = async (config: SheetConfig) => {
   }
 
   // Batch get both Exercise List and Workout Program
-  // Exercise List: Column A to D
+  // Exercise List: Column A to C
   // Workout Program: Column A to D
   // We fetch the entire columns to ensure we get all data, then skip the header in parsing.
   const ranges = [
-    "'Exercise List'!A:D",
+    "'Exercise List'!A:D", 
     "'Workout Program'!A:D"
   ];
   
@@ -43,6 +43,11 @@ const parseSheetData = (data: any) => {
   
   const exerciseDefinitions = new Map<string, ExerciseDefinition>();
   
+  // Columns in Exercise list:
+  // A - internal table ID
+  // B - Exercise name
+  // C - Muscle Group
+  // D - Video Links
   exerciseRows.forEach((row: string[]) => {
     if (row[1]) {
       exerciseDefinitions.set(row[1], {
