@@ -11,11 +11,11 @@ export const fetchSheetData = async (config: SheetConfig) => {
   }
 
   // Batch get both Exercise List and Workout Program
-  // Exercise List: Column A to C
+  // Exercise List: Column A to D
   // Workout Program: Column A to D
   // We fetch the entire columns to ensure we get all data, then skip the header in parsing.
   const ranges = [
-    "'Exercise List'!A:C", 
+    "'Exercise List'!A:D",
     "'Workout Program'!A:D"
   ];
   
@@ -44,11 +44,11 @@ const parseSheetData = (data: any) => {
   const exerciseDefinitions = new Map<string, ExerciseDefinition>();
   
   exerciseRows.forEach((row: string[]) => {
-    if (row[0]) {
-      exerciseDefinitions.set(row[0], {
-        name: row[0],
-        muscleGroup: row[1] || '',
-        videoLinks: row[2] ? row[2].split(',').map(s => s.trim()) : []
+    if (row[1]) {
+      exerciseDefinitions.set(row[1], {
+        name: row[1],
+        muscleGroup: row[2] || '',
+        videoLinks: row[3] ? row[3].split(',').map(s => s.trim()) : []
       });
     }
   });
