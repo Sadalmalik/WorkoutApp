@@ -16,6 +16,9 @@ export type {
   Result,
   BodyweightEntry,
   Session,
+  SessionSet,
+  SessionCursor,
+  AdHocState,
 } from './entities.ts';
 
 export type { Theme, Settings } from './settings.ts';

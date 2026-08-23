@@ -170,9 +170,95 @@ export interface ActiveProgram {
  */
 export type SchedulerState = Record<string, unknown>;
 
-/** A recorded performed set. Filled by the session/results ticket (06). */
+/**
+ * A recorded performed set — one row of the results history (ticket 05).
+ *
+ * Every logged set, whether it comes from a planned block or an ad-hoc exercise, appends one
+ * `Result`. The history is append-only in Phase 1 (editing/removing only the current session is a
+ * later concern). Reports (tickets 09/10) read this list; the reference from a result to the
+ * catalog is by {@link Result.exerciseId}.
+ */
 export interface Result {
+  /** Stable uuid v4 identity. */
   id: string;
+  /** Reference into the exercise catalog ({@link Exercise.id}). */
+  exerciseId: string;
+  /** When the set was logged, epoch milliseconds (from the injected `Clock`). */
+  timestamp: number;
+  /** Weight lifted, kilograms. */
+  weight: number;
+  /** Repetitions performed. */
+  reps: number;
+}
+
+/**
+ * One set logged inside the running session (ticket 05). Mirrors the {@link Result} appended to
+ * history, kept on the session too so the workout screen and the end-of-workout summary can read
+ * "what was done this session" without scanning the whole history.
+ */
+export interface SessionSet {
+  /** Reference into the exercise catalog ({@link Exercise.id}). */
+  exerciseId: string;
+  /** Weight lifted, kilograms. */
+  weight: number;
+  /** Repetitions performed. */
+  reps: number;
+  /** When the set was logged, epoch milliseconds. */
+  timestamp: number;
+}
+
+/**
+ * The session cursor: which planned set is next. Indices address the session's own
+ * {@link Session.workout} snapshot as reordered by {@link Session.blockOrder}.
+ */
+export interface SessionCursor {
+  /** Index into the ordered blocks; equal to the block count once the workout is complete. */
+  block: number;
+  /** Index into the current block's exercises (drives superset A→B→A→B order). */
+  exercise: number;
+  /** Current set, 0-based. */
+  set: number;
+}
+
+/**
+ * Ad-hoc (off-plan) state while an unplanned exercise is active during a session (ticket 05). Its
+ * sets are written to the {@link Result} history but never move the {@link Session.cursor}; the
+ * plan's timeline is marked paused ({@link Session.timelinePaused}) for ticket 07.
+ */
+export interface AdHocState {
+  /** Reference into the exercise catalog ({@link Exercise.id}) of the off-plan exercise. */
+  exerciseId: string;
+  /** When the ad-hoc exercise was started, epoch milliseconds. */
+  startedAt: number;
+}
+
+/**
+ * The current unfinished workout session (ticket 05). Orthogonal to the scheduler (ADR 0001): it
+ * carries its own {@link Session.workout} snapshot so it survives reload and a calendar-day change
+ * even if the scheduler would resolve a different "today". The scheduler cursor is only moved once,
+ * on completion, via `advanceSchedule`.
+ */
+export interface Session {
+  /** Stable uuid v4 identity. */
+  id: string;
+  /** Id of the {@link Program} this session runs. */
+  programId: string;
+  /** Snapshot of the workout being performed (independent of the live scheduler cursor). */
+  workout: Workout;
+  /** Effective block id order (seeds/receives "отложить блок"); reorders {@link workout}. */
+  blockOrder: string[];
+  /** Which planned set is next. */
+  cursor: SessionCursor;
+  /** Sets logged during this session. */
+  loggedSets: SessionSet[];
+  /** When the session started, epoch milliseconds. */
+  startedAt: number;
+  /** When the last set was logged, epoch milliseconds, or `null` if none yet. */
+  lastSetAt: number | null;
+  /** Active off-plan exercise, or `null` when following the plan. */
+  adHoc: AdHocState | null;
+  /** True while the plan timeline is paused by an active ad-hoc exercise (ticket 07). */
+  timelinePaused: boolean;
 }
 
 /**

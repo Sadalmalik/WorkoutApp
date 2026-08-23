@@ -34,6 +34,9 @@ export type {
   Result,
   BodyweightEntry,
   Session,
+  SessionSet,
+  SessionCursor,
+  AdHocState,
   Theme,
   Settings,
   SaveData,
@@ -111,6 +114,23 @@ export {
   cancelProgram,
   changeScheduler,
 } from './scheduler/index.ts';
+
+// Session subsystem (ticket 05): lifecycle, ad-hoc, continue/finish predicate
+export type { SessionSummary, ActiveSlot } from './session/index.ts';
+export {
+  getSession,
+  isSessionComplete,
+  activeSlot,
+  needsResumeDecision,
+  startSession,
+  logSet,
+  finishSession,
+  abandonSession,
+  deferSessionBlock,
+  startAdHoc,
+  endAdHoc,
+  logAdHocResult,
+} from './session/index.ts';
 
 // Strategy contracts (interfaces only; implementations arrive in later tickets)
 export type { Report, DataPoint } from './reports/report.ts';
