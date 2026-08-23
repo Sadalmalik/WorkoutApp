@@ -8,6 +8,8 @@ export {
   needsResumeDecision,
   startSession,
   logSet,
+  editSessionSet,
+  removeSessionSet,
   finishSession,
   abandonSession,
   deferSessionBlock,

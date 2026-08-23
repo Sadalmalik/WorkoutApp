@@ -11,6 +11,8 @@ import {
   needsResumeDecision,
   startSession,
   logSet,
+  editSessionSet,
+  removeSessionSet,
   abandonSession,
   startAdHoc,
   endAdHoc,
@@ -231,6 +233,89 @@ describe('persistence across reload and day change', () => {
     expect(activeSlot(reloaded, s)?.exerciseId).toBe('a');
     logSet(reloaded, atDay(1), 100, 10); // finishes the block on the next day
     expect(getSession(reloaded)).toBeNull();
+  });
+});
+
+describe('editSessionSet / removeSessionSet (current-session set editing)', () => {
+  it('edits weight and reps in both the session and the backing history result', () => {
+    const store = storageWith(program('P', [workoutDay('W0', [block('a', 3)])]));
+    launch(store, atDay(0));
+    logSet(store, atDay(0, 1000), 100, 10);
+
+    editSessionSet(store, 0, 105, 8);
+
+    const s = getSession(store)!;
+    expect(s.loggedSets[0]).toMatchObject({ exerciseId: 'a', weight: 105, reps: 8, timestamp: atDay(0, 1000).now() });
+    expect(store.load()!.results[0]).toMatchObject({ exerciseId: 'a', weight: 105, reps: 8 });
+    // Cursor is untouched by an edit.
+    expect(s.cursor).toEqual({ block: 0, exercise: 0, set: 1 });
+  });
+
+  it('removes a set from both the session and history', () => {
+    const store = storageWith(program('P', [workoutDay('W0', [block('a', 3)])]));
+    launch(store, atDay(0));
+    logSet(store, atDay(0, 1000), 100, 10);
+    logSet(store, atDay(0, 2000), 100, 12);
+
+    removeSessionSet(store, 0);
+
+    const s = getSession(store)!;
+    expect(s.loggedSets).toHaveLength(1);
+    expect(s.loggedSets[0]).toMatchObject({ weight: 100, reps: 12 });
+    const save = store.load()!;
+    expect(save.results).toHaveLength(1);
+    expect(save.results[0]).toMatchObject({ weight: 100, reps: 12 });
+  });
+
+  it('disambiguates identical sets logged at the same instant by ordinal', () => {
+    const store = storageWith(program('P', [workoutDay('W0', [block('a', 5)])]));
+    launch(store, atDay(0));
+    // Three identical sets, same timestamp — indistinguishable except by position.
+    logSet(store, atDay(0), 100, 10);
+    logSet(store, atDay(0), 100, 10);
+    logSet(store, atDay(0), 100, 10);
+
+    // Edit the middle one only.
+    editSessionSet(store, 1, 90, 5);
+
+    const sets = getSession(store)!.loggedSets;
+    expect(sets.map((s) => `${s.weight}x${s.reps}`)).toEqual(['100x10', '90x5', '100x10']);
+    const results = store.load()!.results.map((r) => `${r.weight}x${r.reps}`);
+    expect(results).toEqual(['100x10', '90x5', '100x10']);
+  });
+
+  it('keeps unrelated history results intact when removing a session set', () => {
+    const store = storageWith(program('P', [workoutDay('W0', [block('a', 3)])]));
+    launch(store, atDay(0));
+    // An ad-hoc result lands in history but not in loggedSets.
+    startAdHoc(store, atDay(0, 500), 'zzz');
+    logSet(store, atDay(0, 500), 40, 20);
+    endAdHoc(store);
+    logSet(store, atDay(0, 1000), 100, 10);
+
+    removeSessionSet(store, 0);
+
+    expect(getSession(store)!.loggedSets).toHaveLength(0);
+    // The ad-hoc result survives.
+    expect(store.load()!.results).toMatchObject([{ exerciseId: 'zzz', weight: 40, reps: 20 }]);
+  });
+
+  it('is a no-op for an out-of-range index', () => {
+    const store = storageWith(program('P', [workoutDay('W0', [block('a', 3)])]));
+    launch(store, atDay(0));
+    logSet(store, atDay(0), 100, 10);
+
+    editSessionSet(store, 5, 999, 999);
+    removeSessionSet(store, -1);
+
+    expect(getSession(store)!.loggedSets).toHaveLength(1);
+    expect(store.load()!.results).toHaveLength(1);
+  });
+
+  it('throws when there is no active session', () => {
+    const store = storageWith(program('P', [workoutDay('W0', [block('a', 1)])]));
+    expect(() => editSessionSet(store, 0, 1, 1)).toThrow();
+    expect(() => removeSessionSet(store, 0)).toThrow();
   });
 });
 

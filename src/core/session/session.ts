@@ -300,6 +300,99 @@ export function abandonSession(storage: Storage): void {
   storage.save(save);
 }
 
+/** True when two logged sets carry the same catalog ref, timing and value (used to disambiguate). */
+function sameLoggedSet(a: SessionSet, b: SessionSet): boolean {
+  return (
+    a.exerciseId === b.exerciseId &&
+    a.timestamp === b.timestamp &&
+    a.weight === b.weight &&
+    a.reps === b.reps
+  );
+}
+
+/**
+ * Locate the history {@link Result} that backs `session.loggedSets[setIndex]`, or `-1` if none.
+ *
+ * {@link SessionSet} carries no id, so the link to history is the tuple
+ * (exerciseId, timestamp, weight, reps). Timestamps are not unique (several sets can be logged at
+ * the same clock instant), so identical tuples are disambiguated by ordinal: the k-th matching
+ * logged set maps to the k-th matching result. Both arrays are appended in the same order and
+ * edit/remove keep them in step, so the ordinal is stable. Must be called BEFORE mutating either
+ * array.
+ */
+function backingResultIndex(save: SaveData, session: Session, setIndex: number): number {
+  const target = session.loggedSets[setIndex];
+  let ordinal = 0;
+  for (let i = 0; i < setIndex; i++) {
+    if (sameLoggedSet(session.loggedSets[i], target)) ordinal += 1;
+  }
+  let seen = 0;
+  for (let i = 0; i < save.results.length; i++) {
+    const r = save.results[i];
+    if (
+      r.exerciseId === target.exerciseId &&
+      r.timestamp === target.timestamp &&
+      r.weight === target.weight &&
+      r.reps === target.reps
+    ) {
+      if (seen === ordinal) return i;
+      seen += 1;
+    }
+  }
+  return -1;
+}
+
+/**
+ * Edit a set already logged in the current session (weight and/or reps), keeping the history in
+ * sync. Rewrites `session.loggedSets[index]` and its backing {@link Result} (matched by
+ * {@link backingResultIndex}); `exerciseId` and `timestamp` are preserved so the row keeps its
+ * identity. The plan {@link Session.cursor} is deliberately untouched — editing a value does not
+ * change how many sets are "done". Throws if there is no active session; a no-op (returns the
+ * session unchanged) if `index` is out of range.
+ */
+export function editSessionSet(
+  storage: Storage,
+  index: number,
+  weight: number,
+  reps: number,
+): Session | null {
+  const save = loadSave(storage);
+  const session = save.session;
+  if (session === null) throw new Error('editSessionSet: no active session');
+  if (index < 0 || index >= session.loggedSets.length) return session;
+
+  const resultIndex = backingResultIndex(save, session, index);
+  const prev = session.loggedSets[index];
+  const nextSet: SessionSet = { ...prev, weight, reps };
+  session.loggedSets = session.loggedSets.map((s, i) => (i === index ? nextSet : s));
+  if (resultIndex >= 0) {
+    save.results = save.results.map((r, i) => (i === resultIndex ? { ...r, weight, reps } : r));
+  }
+  storage.save(save);
+  return session;
+}
+
+/**
+ * Remove a set logged in the current session, dropping its backing {@link Result} from history too.
+ * The plan {@link Session.cursor} is deliberately untouched — removing an accidental extra set fixes
+ * the record without rewinding the plan position (reversing the block/superset walk is out of scope
+ * for ticket 06). Throws if there is no active session; a no-op if `index` is out of range.
+ */
+export function removeSessionSet(storage: Storage, index: number): Session | null {
+  const save = loadSave(storage);
+  const session = save.session;
+  if (session === null) throw new Error('removeSessionSet: no active session');
+  if (index < 0 || index >= session.loggedSets.length) return session;
+
+  const resultIndex = backingResultIndex(save, session, index);
+  session.loggedSets = session.loggedSets.filter((_, i) => i !== index);
+  if (resultIndex >= 0) {
+    save.results = save.results.filter((_, i) => i !== resultIndex);
+  }
+  storage.save(save);
+  return session;
+}
+
 function summarize(session: Session, finishedAt: number): SessionSummary {
   const totalVolume = session.loggedSets.reduce((sum, s) => sum + s.weight * s.reps, 0);
   return {
