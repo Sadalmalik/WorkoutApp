@@ -3,6 +3,7 @@ import { FixedClock } from '../ports/index.ts';
 import type { Program, PlanDay } from '../model/index.ts';
 import { DAY_MS } from './day.ts';
 import { CalendarScheduler } from './calendar.ts';
+import type { CalendarState } from './calendar.ts';
 
 const rest: PlanDay = { kind: 'rest' };
 
@@ -109,7 +110,7 @@ describe('CalendarScheduler — block deferral', () => {
   });
 
   it('deferring the last block is a no-op', () => {
-    let s = { ...stateAt(0), blockOrder: ['a', 'b', 'c'] };
+    let s: CalendarState = { ...stateAt(0), blockOrder: ['a', 'b', 'c'] };
     s = sched.deferBlock(s, 'c');
     expect(sched.currentWorkout(s, prog, atDay(0))!.blocks.map((b) => b.id)).toEqual(['a', 'b', 'c']);
   });

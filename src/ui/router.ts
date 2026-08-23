@@ -116,6 +116,24 @@ export function navigateToProgram(id: string): void {
   window.location.hash = `${PROGRAMS_PATH}/${id}`;
 }
 
+/**
+ * Session area. Phase 1 is a stub reached from Home's "Начать"; ticket 05 replaces its screen with
+ * the real workout session. Layered on the hash like the catalog/program areas — `#/session`.
+ */
+export const SESSION_PATH = '/session';
+
+/** True when `hash` addresses the session area. */
+export function isSessionRoute(hash: string): boolean {
+  const path = hash.replace(/^#/, '');
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  return normalized === SESSION_PATH;
+}
+
+/** Navigate to the (stub) session screen. */
+export function navigateToSession(): void {
+  window.location.hash = SESSION_PATH;
+}
+
 /** React hook: the raw `location.hash`, re-read on Back/Forward or any navigation. */
 export function useHash(): string {
   const [hash, setHash] = useState<string>(() => window.location.hash);

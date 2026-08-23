@@ -1,4 +1,4 @@
-import { useCallback, useMemo, useState } from 'react';
+import { useCallback, useState } from 'react';
 import type { ReactElement } from 'react';
 import type { Clock, Storage, SaveData } from '../core/index.ts';
 import { emptySaveData, SystemClock } from '../core/index.ts';
@@ -8,23 +8,26 @@ import {
   useHash,
   parseCatalogRoute,
   parseProgramRoute,
+  isSessionRoute,
   type Route,
 } from './router.ts';
 import { useTheme } from './theme.ts';
 import { BottomNav } from './nav/BottomNav.tsx';
 import { BodyweightDialog } from './components/BodyweightDialog.tsx';
+import { ProgramPopup } from './components/ProgramPopup.tsx';
 import {
-  HomeScreen,
   ResultsScreen,
   SettingsScreen,
   BodyweightScreen,
   AdHocScreen,
 } from './screens/index.tsx';
+import { HomeScreen } from './screens/HomeScreen.tsx';
+import { SessionStubScreen } from './screens/SessionStubScreen.tsx';
 import { CatalogView } from './screens/CatalogView.tsx';
 import { ProgramsView } from './screens/ProgramsView.tsx';
 
-const SCREENS: Record<Route, () => ReactElement> = {
-  [ROUTES.home]: HomeScreen,
+/** Screens that need no core wiring (Home and Session are handled specially below). */
+const STUB_SCREENS: Record<Exclude<Route, typeof ROUTES.home>, () => ReactElement> = {
   [ROUTES.results]: ResultsScreen,
   [ROUTES.settings]: SettingsScreen,
   [ROUTES.bodyweight]: BodyweightScreen,
@@ -44,6 +47,7 @@ export function App({
 }) {
   const [save, setSave] = useState<SaveData>(() => storage.load() ?? seedEmpty(storage));
   const [bodyweightOpen, setBodyweightOpen] = useState(false);
+  const [programPopupOpen, setProgramPopupOpen] = useState(false);
   const route = useRoute();
   const hash = useHash();
   useTheme(save.settings.theme);
@@ -53,7 +57,13 @@ export function App({
 
   const catalog = parseCatalogRoute(hash);
   const programs = parseProgramRoute(hash);
-  const Screen = useMemo(() => SCREENS[route], [route]);
+  const session = isSessionRoute(hash);
+  const StubScreen = route === ROUTES.home ? null : STUB_SCREENS[route];
+
+  const activeProgram = save.activeProgram;
+  const activeProgramEntity = activeProgram
+    ? save.programs.find((p) => p.id === activeProgram.programId) ?? null
+    : null;
 
   return (
     <div className="app">
@@ -67,21 +77,38 @@ export function App({
             exercises={save.exercises}
             onChange={reload}
           />
+        ) : session ? (
+          <SessionStubScreen storage={storage} clock={clock} onChange={reload} />
+        ) : StubScreen ? (
+          <StubScreen />
         ) : (
-          <Screen />
+          <HomeScreen save={save} storage={storage} clock={clock} onChange={reload} />
         )}
       </main>
       {/* The catalog and program areas live under Settings, so keep that tab highlighted inside them. */}
       <BottomNav
-        active={catalog || programs ? ROUTES.settings : route}
+        active={catalog || programs ? ROUTES.settings : session ? ROUTES.home : route}
         onBodyweight={() => setBodyweightOpen(true)}
+        onHomeDoubleTap={
+          activeProgram && activeProgramEntity ? () => setProgramPopupOpen(true) : undefined
+        }
       />
       {bodyweightOpen ? (
         <BodyweightDialog
           storage={storage}
           clock={clock}
           onClose={() => setBodyweightOpen(false)}
-          onSaved={() => setSave(storage.load() ?? emptySaveData())}
+          onSaved={reload}
+        />
+      ) : null}
+      {programPopupOpen && activeProgram && activeProgramEntity ? (
+        <ProgramPopup
+          storage={storage}
+          clock={clock}
+          program={activeProgramEntity}
+          active={activeProgram}
+          onChange={reload}
+          onClose={() => setProgramPopupOpen(false)}
         />
       ) : null}
     </div>

@@ -3,14 +3,12 @@ import { StubScreen } from './StubScreen.tsx';
 import { navigateToCatalog, navigateToPrograms } from '../router.ts';
 
 /**
- * Stub screens for the five shell routes. Each is a labelled placeholder that later tickets
- * replace with the real Home state machine, statistics, catalogs/settings, bodyweight logging,
- * and the ad-hoc exercise flow.
+ * Stub screens for the remaining shell routes. Each is a labelled placeholder that later tickets
+ * replace with statistics, bodyweight logging, and the ad-hoc exercise flow. Home is the real
+ * state machine (ticket 04), exported from {@link ./HomeScreen.tsx}.
  */
 
-export function HomeScreen() {
-  return <StubScreen title="Home" note="Today's workout / program state — ticket 06/07." />;
-}
+export { HomeScreen } from './HomeScreen.tsx';
 
 export function ResultsScreen() {
   return <StubScreen title="Results" note="Progress charts — tickets 09/10." />;

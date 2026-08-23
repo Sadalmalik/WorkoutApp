@@ -3,6 +3,7 @@ import { FixedClock } from '../ports/index.ts';
 import type { Program, PlanDay } from '../model/index.ts';
 import { DAY_MS } from './day.ts';
 import { HybridScheduler } from './hybrid.ts';
+import type { HybridState } from './hybrid.ts';
 
 const rest: PlanDay = { kind: 'rest' };
 
@@ -121,7 +122,7 @@ describe('HybridScheduler — block deferral', () => {
   const prog = program([w('W0', ['a', 'b', 'c'])]);
 
   it('applies a deferred block order to the returned workout', () => {
-    let s = { ...stateAt(0), blockOrder: ['a', 'b', 'c'] };
+    let s: HybridState = { ...stateAt(0), blockOrder: ['a', 'b', 'c'] };
     s = sched.deferBlock(s, 'b');
     expect(sched.currentWorkout(s, prog, atDay(0))!.blocks.map((b) => b.id)).toEqual(['a', 'c', 'b']);
   });
