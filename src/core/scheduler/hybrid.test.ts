@@ -93,13 +93,29 @@ describe('HybridScheduler — pull-forward ("начать следующую") o
     expect(sched.currentWorkout(pulled, prog, atDay(1))?.id).toBe('W1');
   });
 
-  it('skip on a workout day drops it and moves on', () => {
+  it('skip on a workout day drops it and lands on the next workout the same day', () => {
     const prog = program([w('W0'), rest, w('W1')]);
     const s = stateAt(0);
 
-    const skipped = sched.skip(s, prog, atDay(0)); // skip W0 → next day is the rest day
-    expect(sched.currentWorkout(skipped, prog, atDay(0))).toBeNull(); // rest
-    expect(sched.currentWorkout(skipped, prog, atDay(1))?.id).toBe('W1'); // rest advances → W1
+    const skipped = sched.skip(s, prog, atDay(0)); // skip W0 → past the rest day → W1 today
+    expect(sched.currentWorkout(skipped, prog, atDay(0))?.id).toBe('W1');
+  });
+
+  it('skip clears a run of consecutive rest days in a single call', () => {
+    const prog = program([w('W0'), rest, rest, w('W1')]);
+    const done = sched.advance(stateAt(0), prog, atDay(0)); // cursor on the first rest (due day 1)
+
+    expect(sched.currentWorkout(done, prog, atDay(1))).toBeNull(); // still a rest day
+    const pulled = sched.skip(done, prog, atDay(1)); // one press jumps over both rests
+    expect(sched.currentWorkout(pulled, prog, atDay(1))?.id).toBe('W1');
+  });
+
+  it('skip on the only workout day keeps it current (no other workout to reach)', () => {
+    const prog = program([w('W0'), rest]);
+    const s = stateAt(0);
+
+    const skipped = sched.skip(s, prog, atDay(0));
+    expect(sched.currentWorkout(skipped, prog, atDay(0))?.id).toBe('W0');
   });
 });
 

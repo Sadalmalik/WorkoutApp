@@ -91,19 +91,27 @@ export class HybridScheduler implements Scheduler {
   }
 
   /**
-   * Skip forward one plan-day, making the next one current **today**. On a rest day this is the
-   * "начать следующую" pull-forward (jump to the next workout early); on a workout day it drops
-   * the current workout and moves on.
+   * "начать следующую" — jump straight to the next workout, making it current **today**. Steps at
+   * least one plan-day forward from the resolved cursor and keeps skipping consecutive rest days so
+   * a run of rest days is cleared in a single call (on a workout day it likewise drops the current
+   * workout and lands on the following one). A plan with no workout day falls back to a single step.
    */
   skip(state: SchedulerState, program: Program, clock: Clock): HybridState {
     const s = asHybridState(state);
     const days = program.plans[0].days;
+    const length = days.length;
     const today = dayIndex(clock.now());
     const { cursor } = resolve(days, s.cursor, s.cursorDay, today);
 
+    // Advance past the current plan-day, then skip any run of rest days to reach the next workout.
+    let next = (cursor + 1) % length;
+    for (let steps = 1; steps < length && days[next].kind === 'rest'; steps += 1) {
+      next = (next + 1) % length;
+    }
+
     return {
       kind: 'hybrid',
-      cursor: (cursor + 1) % days.length,
+      cursor: next,
       cursorDay: today,
       completedDay: s.completedDay,
       blockOrder: null,
