@@ -20,6 +20,7 @@ export {
 export { newId } from './model/index.ts';
 export type {
   Muscle,
+  MuscleRef,
   Exercise,
   Program,
   Workout,
@@ -40,6 +41,18 @@ export {
   listBodyweight,
   removeBodyweightEntry,
 } from './bodyweight/index.ts';
+
+// Exercise catalog operations + search
+export type { ExerciseDraft } from './catalog/index.ts';
+export {
+  DEFAULT_WEIGHT_STEP,
+  createExercise,
+  updateExercise,
+  getExercise,
+  listExercises,
+  searchExercises,
+  collectZones,
+} from './catalog/index.ts';
 
 // Strategy contracts (interfaces only; implementations arrive in later tickets)
 export type { Scheduler, SchedulerId } from './scheduler/scheduler.ts';
