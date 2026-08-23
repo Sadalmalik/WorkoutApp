@@ -47,6 +47,13 @@ export function SettingsScreen({
     onChange();
   }
 
+  function setContinueThreshold(value: number) {
+    if (!Number.isFinite(value)) return;
+    const clamped = Math.min(48, Math.max(1, Math.round(value)));
+    updateSettings(storage, { continueThresholdHours: clamped });
+    onChange();
+  }
+
   return (
     <section className="settings">
       <h1 className="settings__title">Настройки</h1>
@@ -100,6 +107,28 @@ export function SettingsScreen({
       <p className="screen__note">
         Палитры подбирают различимые акцентные цвета под тип дальтонизма. Состояния и линии
         различаются также формой, штрихом и подписью, не только цветом.
+      </p>
+
+      <h2 className="settings__section-title">Тренировка</h2>
+      <div className="settings__field">
+        <label className="settings__field-label" htmlFor="settings-continue-threshold">
+          Порог «продолжить/завершить» (часы)
+        </label>
+        <input
+          id="settings-continue-threshold"
+          className="settings__input"
+          type="number"
+          inputMode="numeric"
+          min={1}
+          max={48}
+          step={1}
+          value={settings.continueThresholdHours}
+          onChange={(e) => setContinueThreshold(e.target.valueAsNumber)}
+        />
+      </div>
+      <p className="screen__note">
+        Через сколько часов простоя незавершённой тренировки предлагать продолжить её или
+        завершить (также срабатывает при смене календарного дня).
       </p>
 
       <h2 className="settings__section-title">Экспорт данных</h2>
