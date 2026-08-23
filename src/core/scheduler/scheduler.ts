@@ -5,21 +5,28 @@ import type { Program, Workout, SchedulerState } from '../model/index.ts';
  * Id of a scheduler strategy. A {@link Program} carries a recommended one as data.
  * Phase 1 implementations: `'calendar'` and `'hybrid'`.
  */
-export type SchedulerId = string;
+export type SchedulerId = 'calendar' | 'hybrid';
 
 /**
  * Pluggable scheduling strategy (ADR 0001). Decides which workout is "now", advances the
  * cursor, and owns its own serialisable runtime state — separate from the program, which is
  * pure data.
  *
- * INTERFACE ONLY. Implementations (`CalendarScheduler`, `HybridScheduler`) arrive in
- * ticket 04. Signatures may be refined there; kept here so the seam is visible.
+ * Implementations: {@link CalendarScheduler}, {@link HybridScheduler} (ticket 04). Each owns a
+ * concrete {@link SchedulerState} shape discriminated by a `kind` field and treats the opaque
+ * `SchedulerState` it receives as its own after narrowing.
  */
 export interface Scheduler {
   /** Strategy id, matching the value stored in a program's recommended scheduler field. */
   readonly id: SchedulerId;
 
-  /** The workout due now for `state`/`program`, or `null` for a rest day. */
+  /**
+   * Fresh runtime state for a program launched now. The start date is read from `clock`
+   * (see ADR 0001 — the cursor/start-date is per-run private state, not part of the program).
+   */
+  init(clock: Clock): SchedulerState;
+
+  /** The workout due now for `state`/`program`, or `null` for a rest day / a day already done. */
   currentWorkout(state: SchedulerState, program: Program, clock: Clock): Workout | null;
 
   /** Advance the cursor after a workout is completed; returns the next state. */

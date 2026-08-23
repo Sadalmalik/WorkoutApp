@@ -150,19 +150,23 @@ export interface Program {
 }
 
 /**
- * Binding of the currently running program to a chosen scheduler strategy.
- * Filled by the program-launch ticket.
+ * Binding of the currently running program to a chosen scheduler strategy (ticket 04). The
+ * scheduler's own runtime state lives separately in {@link SaveData.schedulerState}; this record
+ * only names the program, the chosen strategy, and whether the program is paused.
  */
 export interface ActiveProgram {
+  /** Id of the running {@link Program}. */
   programId: string;
-  /** Id of the chosen scheduler strategy, e.g. 'calendar' | 'hybrid'. */
-  schedulerId: string;
+  /** Id of the chosen scheduler strategy (defaults to the program's recommended one at launch). */
+  schedulerId: SchedulerId;
+  /** True while the program is paused: Home shows "на паузе / продолжить" and the cursor is frozen. */
+  paused: boolean;
 }
 
 /**
  * Opaque per-scheduler runtime state (start date, cursor, …) persisted separately from the
- * program. Each {@link Scheduler} owns its own shape; the core treats it as opaque JSON.
- * Filled by the scheduler ticket (04).
+ * program (ticket 04). Each {@link Scheduler} owns its own shape (discriminated by a `kind`
+ * field); the core treats it as opaque JSON and narrows it inside the owning scheduler.
  */
 export type SchedulerState = Record<string, unknown>;
 

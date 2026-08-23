@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react';
 import { ChevronLeft, Plus, X, Trash2 } from 'lucide-react';
-import type { Exercise, Program, PlanDay, Workout, Block, BlockExercise } from '../../core/index.ts';
+import type { Exercise, Program, PlanDay, Workout, Block, BlockExercise, SchedulerId } from '../../core/index.ts';
 import {
   validateProgram,
   newWorkout,
@@ -8,14 +8,10 @@ import {
   newRestDay,
   newBlock,
   newBlockExercise,
+  SCHEDULER_IDS,
+  SCHEDULER_LABELS,
 } from '../../core/index.ts';
 import { ExercisePicker } from '../components/ExercisePicker.tsx';
-
-/** Scheduler choices offered as the program's recommended scheduler (ADR 0001 ids). */
-const SCHEDULER_OPTIONS: { id: string; label: string }[] = [
-  { id: 'calendar', label: 'Календарное' },
-  { id: 'hybrid', label: 'Гибридное' },
-];
 
 /**
  * Linear program editor (ticket 03). Edits a working copy of the {@link Program} — its single
@@ -90,11 +86,13 @@ export function ProgramEditorScreen({
         <select
           className="input"
           value={program.recommendedSchedulerId}
-          onChange={(e) => setProgram({ ...program, recommendedSchedulerId: e.target.value })}
+          onChange={(e) =>
+            setProgram({ ...program, recommendedSchedulerId: e.target.value as SchedulerId })
+          }
         >
-          {SCHEDULER_OPTIONS.map((o) => (
-            <option key={o.id} value={o.id}>
-              {o.label}
+          {SCHEDULER_IDS.map((id) => (
+            <option key={id} value={id}>
+              {SCHEDULER_LABELS[id]}
             </option>
           ))}
         </select>

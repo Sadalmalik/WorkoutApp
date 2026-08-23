@@ -25,10 +25,11 @@ import type {
   StaticTarget,
   SaveData,
 } from '../model/index.ts';
+import type { SchedulerId } from '../scheduler/scheduler.ts';
 import { newId, emptySaveData } from '../model/index.ts';
 
 /** Default recommended scheduler for a freshly created program. */
-export const DEFAULT_SCHEDULER_ID = 'calendar';
+export const DEFAULT_SCHEDULER_ID: SchedulerId = 'calendar';
 
 /** Convenience defaults for freshly built blocks/workouts (all satisfy `validateProgram`). */
 export const BLOCK_DEFAULTS = {
@@ -88,7 +89,7 @@ export function newPlan(length: number): Plan {
  */
 export function newProgram(
   name: string,
-  opts: { planLength?: number; recommendedSchedulerId?: string } = {},
+  opts: { planLength?: number; recommendedSchedulerId?: SchedulerId } = {},
 ): Program {
   return {
     id: newId(),

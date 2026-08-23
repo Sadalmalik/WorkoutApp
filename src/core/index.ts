@@ -80,7 +80,38 @@ export {
   collectZones,
 } from './catalog/index.ts';
 
+// Scheduler subsystem (ADR 0001): interface, both strategies, registry, active-program ops + Home
+export type {
+  Scheduler,
+  SchedulerId,
+  CalendarState,
+  HybridState,
+  HomeStatus,
+} from './scheduler/index.ts';
+export {
+  DAY_MS,
+  dayIndex,
+  applyBlockOrder,
+  CalendarScheduler,
+  asCalendarState,
+  HybridScheduler,
+  asHybridState,
+  getScheduler,
+  SCHEDULER_IDS,
+  SCHEDULER_LABELS,
+  startProgram,
+  homeState,
+  getHomeState,
+  currentWorkout,
+  advanceSchedule,
+  skipSchedule,
+  deferCurrentBlock,
+  pauseProgram,
+  resumeProgram,
+  cancelProgram,
+  changeScheduler,
+} from './scheduler/index.ts';
+
 // Strategy contracts (interfaces only; implementations arrive in later tickets)
-export type { Scheduler, SchedulerId } from './scheduler/scheduler.ts';
 export type { Report, DataPoint } from './reports/report.ts';
 export type { Progression, ProgressionTarget } from './progression/progression.ts';
