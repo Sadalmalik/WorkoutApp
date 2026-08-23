@@ -11,11 +11,19 @@ const ITEMS: ReadonlyArray<{ route: Route; label: string; Icon: LucideIcon }> = 
   { route: ROUTES.adhoc, label: 'Add', Icon: Plus },
 ];
 
-export function BottomNav({ active }: { active: Route }) {
+export function BottomNav({
+  active,
+  onBodyweight,
+}: {
+  active: Route;
+  /** Opens the bodyweight-log popup; when given, the "feather" item calls it instead of routing. */
+  onBodyweight?: () => void;
+}) {
   return (
     <nav className="bottom-nav" aria-label="Primary">
       {ITEMS.map(({ route, label, Icon }) => {
         const isActive = active === route;
+        const opensPopup = route === ROUTES.bodyweight && onBodyweight !== undefined;
         return (
           <button
             key={route}
@@ -23,8 +31,9 @@ export function BottomNav({ active }: { active: Route }) {
             className="bottom-nav__item"
             aria-label={label}
             aria-current={isActive ? 'page' : undefined}
+            aria-haspopup={opensPopup ? 'dialog' : undefined}
             data-active={isActive || undefined}
-            onClick={() => navigate(route)}
+            onClick={() => (opensPopup ? onBodyweight!() : navigate(route))}
           >
             <Icon className="bottom-nav__icon" aria-hidden />
             <span className="bottom-nav__label">{label}</span>

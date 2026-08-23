@@ -1,10 +1,11 @@
 import { useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
-import type { Storage, SaveData } from '../core/index.ts';
-import { emptySaveData } from '../core/index.ts';
+import type { Clock, Storage, SaveData } from '../core/index.ts';
+import { emptySaveData, SystemClock } from '../core/index.ts';
 import { ROUTES, useRoute, type Route } from './router.ts';
 import { useTheme } from './theme.ts';
 import { BottomNav } from './nav/BottomNav.tsx';
+import { BodyweightDialog } from './components/BodyweightDialog.tsx';
 import {
   HomeScreen,
   ResultsScreen,
@@ -25,9 +26,15 @@ const SCREENS: Record<Route, () => ReactElement> = {
  * Root React shell: loads the save through the injected {@link Storage} port, applies the theme
  * from settings, and renders the routed stub screen above the bottom navigation.
  */
-export function App({ storage }: { storage: Storage }) {
-  // Ticket 01 only reads settings from the save; later tickets add editing that writes back.
-  const [save] = useState<SaveData>(() => storage.load() ?? seedEmpty(storage));
+export function App({
+  storage,
+  clock = new SystemClock(),
+}: {
+  storage: Storage;
+  clock?: Clock;
+}) {
+  const [save, setSave] = useState<SaveData>(() => storage.load() ?? seedEmpty(storage));
+  const [bodyweightOpen, setBodyweightOpen] = useState(false);
   const route = useRoute();
   useTheme(save.settings.theme);
 
@@ -38,7 +45,15 @@ export function App({ storage }: { storage: Storage }) {
       <main className="app__body">
         <Screen />
       </main>
-      <BottomNav active={route} />
+      <BottomNav active={route} onBodyweight={() => setBodyweightOpen(true)} />
+      {bodyweightOpen ? (
+        <BodyweightDialog
+          storage={storage}
+          clock={clock}
+          onClose={() => setBodyweightOpen(false)}
+          onSaved={() => setSave(storage.load() ?? emptySaveData())}
+        />
+      ) : null}
     </div>
   );
 }

@@ -19,7 +19,12 @@ export function SettingsScreen() {
 }
 
 export function BodyweightScreen() {
-  return <StubScreen title="Bodyweight" note="Log bodyweight — later ticket." />;
+  return (
+    <StubScreen
+      title="Bodyweight"
+      note="Logging is done from the feather button popup; the bodyweight chart is Phase 2."
+    />
+  );
 }
 
 export function AdHocScreen() {
