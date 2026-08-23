@@ -1,9 +1,16 @@
 import { ChevronRight, Download, Share2 } from 'lucide-react';
-import type { Clock, Storage, SaveData, ExportDocument } from '../../core/index.ts';
-import { exportFull, exportProgramShare, exportToJson } from '../../core/index.ts';
+import type { Clock, Storage, SaveData, ExportDocument, Theme } from '../../core/index.ts';
+import { exportFull, exportProgramShare, exportToJson, updateSettings } from '../../core/index.ts';
 import { StubScreen } from './StubScreen.tsx';
 import { ImportFlow } from './ImportFlow.tsx';
+import { PALETTE_OPTIONS } from '../theme.ts';
 import { navigateToCatalog, navigateToPrograms } from '../router.ts';
+
+const THEME_OPTIONS: readonly { id: Theme; label: string }[] = [
+  { id: 'system', label: 'Системная' },
+  { id: 'light', label: 'Светлая' },
+  { id: 'dark', label: 'Тёмная' },
+];
 
 /**
  * Stub screens for the remaining shell routes. Each is a labelled placeholder that later tickets
@@ -28,6 +35,18 @@ export function SettingsScreen({
     downloadJson(`${prefix}-${fileStamp(doc.exportedAt)}.json`, exportToJson(doc));
   }
 
+  const settings = save.settings;
+
+  function setTheme(theme: Theme) {
+    updateSettings(storage, { theme });
+    onChange();
+  }
+
+  function setPalette(value: string) {
+    updateSettings(storage, { colorblindPalette: value === '' ? null : value });
+    onChange();
+  }
+
   return (
     <section className="settings">
       <h1 className="settings__title">Настройки</h1>
@@ -41,6 +60,47 @@ export function SettingsScreen({
           <ChevronRight aria-hidden />
         </button>
       </nav>
+
+      <h2 className="settings__section-title">Оформление</h2>
+      <div className="settings__field">
+        <label className="settings__field-label" htmlFor="settings-theme">
+          Тема
+        </label>
+        <select
+          id="settings-theme"
+          className="settings__select"
+          value={settings.theme}
+          onChange={(e) => setTheme(e.target.value as Theme)}
+        >
+          {THEME_OPTIONS.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <div className="settings__field">
+        <label className="settings__field-label" htmlFor="settings-palette">
+          Палитра (дальтонизм)
+        </label>
+        <select
+          id="settings-palette"
+          className="settings__select"
+          value={settings.colorblindPalette ?? ''}
+          onChange={(e) => setPalette(e.target.value)}
+        >
+          <option value="">Обычная</option>
+          {PALETTE_OPTIONS.map((opt) => (
+            <option key={opt.id} value={opt.id}>
+              {opt.label}
+            </option>
+          ))}
+        </select>
+      </div>
+      <p className="screen__note">
+        Палитры подбирают различимые акцентные цвета под тип дальтонизма. Состояния и линии
+        различаются также формой, штрихом и подписью, не только цветом.
+      </p>
 
       <h2 className="settings__section-title">Экспорт данных</h2>
       <div className="settings__export" aria-label="Экспорт данных">
@@ -70,8 +130,6 @@ export function SettingsScreen({
         Импорт без затирания: сначала вопросы о совпадениях по имени, затем сводка изменений
         с выбором политики. Результаты и вес тела объединяются, настройки берутся из файла.
       </p>
-
-      <p className="screen__note">Тема и доступность — тикеты 05/12.</p>
     </section>
   );
 }

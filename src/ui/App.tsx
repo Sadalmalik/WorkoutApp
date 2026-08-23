@@ -11,7 +11,7 @@ import {
   isSessionRoute,
   type Route,
 } from './router.ts';
-import { useTheme } from './theme.ts';
+import { useTheme, usePalette } from './theme.ts';
 import { BottomNav } from './nav/BottomNav.tsx';
 import { BodyweightDialog } from './components/BodyweightDialog.tsx';
 import { ProgramPopup } from './components/ProgramPopup.tsx';
@@ -51,6 +51,7 @@ export function App({
   const route = useRoute();
   const hash = useHash();
   useTheme(save.settings.theme);
+  usePalette(save.settings.colorblindPalette);
 
   // Re-read the persisted save after a core mutation so views reflect the change.
   const reload = useCallback(() => setSave(storage.load() ?? emptySaveData()), [storage]);
