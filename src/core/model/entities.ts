@@ -13,10 +13,39 @@ export interface Muscle {
   name: string;
 }
 
-/** Catalog entry: an exercise (movement). Filled by the exercise-catalog ticket. */
+/**
+ * A weighted link from an exercise to a muscle in the muscle catalog. `involvement` is the
+ * manual 0..1 engagement coefficient (see CONTEXT.md → Мышца). Phase 1 leaves the list empty;
+ * the muscle-catalog UI (Phase 2) populates it. Defined here so the field shape is stable.
+ */
+export interface MuscleRef {
+  /** Id of the referenced {@link Muscle}. */
+  muscleId: string;
+  /** Engagement coefficient in the range 0..1. */
+  involvement: number;
+}
+
+/**
+ * Catalog entry: an exercise (movement), e.g. «Жим гантелей лёжа 30°». Lives in the catalog
+ * independently of any program (see CONTEXT.md → Упражнение).
+ */
 export interface Exercise {
+  /** Stable uuid v4 identity; references from blocks/results point here. */
   id: string;
+  /** Display name; also the matching key on import. */
   name: string;
+  /** Free-text zone (Спина, Грудь…); coarse bucket, autocompleted from prior values. */
+  zone: string;
+  /** Reference video URLs. */
+  videoLinks: string[];
+  /** True when the movement is loaded by bodyweight rather than external weight. */
+  isBodyweight: boolean;
+  /** Increment (kg) of the equipment's weight stack/plates; used by weight pickers. */
+  equipmentWeightStep: number;
+  /** Free-text notes. */
+  notes: string;
+  /** Weighted muscle links; empty in Phase 1 (populated by the muscle-catalog ticket). */
+  muscleRefs: MuscleRef[];
 }
 
 /** A training program (plans + rotation). Filled by the program-editor ticket. */

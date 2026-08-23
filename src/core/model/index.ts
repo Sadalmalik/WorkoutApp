@@ -2,6 +2,7 @@ export { newId } from './ids.ts';
 
 export type {
   Muscle,
+  MuscleRef,
   Exercise,
   Program,
   Workout,
