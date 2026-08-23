@@ -916,33 +916,99 @@ body {
   font-variant-numeric: tabular-nums;
 }
 
-/* Placeholder timeline dots (ticket 07 slot) */
-.plandots {
+/* Workout timeline (ticket 07): columns of circles, horizontal line = между блоками.
+   State differentiation is by outline/fill + marker, not colour alone (ticket 14 tunes palette). */
+.timeline {
   display: flex;
   align-items: center;
-  gap: 0.4rem;
+  justify-content: flex-start;
+  gap: 0.5rem;
+  width: 100%;
+  overflow-x: auto;
 }
 
-.plandots__dot {
-  width: 0.7rem;
-  height: 0.7rem;
+.timeline[data-paused] {
+  opacity: 0.4;
+}
+
+.timeline__track {
+  list-style: none;
+  margin: 0;
+  padding: 0.15rem 0.1rem;
+  display: flex;
+  align-items: center;
+  gap: 0;
+}
+
+.timeline__block {
+  flex: 0 0 auto;
+}
+
+.timeline__defer {
+  display: block;
+  padding: 0.25rem;
+  border: 0;
+  border-radius: 0.4rem;
+  background: transparent;
+  color: inherit;
+  cursor: pointer;
+}
+
+.timeline__defer:focus-visible {
+  outline: 2px solid var(--accent);
+}
+
+.timeline__dots {
+  display: flex;
+  flex-direction: column;
+  gap: 0.3rem;
+}
+
+.timeline__dot {
+  box-sizing: border-box;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 0.8rem;
+  height: 0.8rem;
   border-radius: 50%;
+  /* upcoming: empty outline (default) */
   border: 2px solid var(--text-muted);
+  background: transparent;
 }
 
-.plandots__dot[data-done] {
+.timeline__dot[data-state='done'] {
+  /* done: whole block filled */
   background: var(--text-muted);
+  border-color: var(--text-muted);
 }
 
-.plandots__dot[data-current] {
+.timeline__dot[data-state='current'] {
+  /* current: accent outline + inner marker */
   border-color: var(--accent);
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
 }
 
-.plandots__paused {
-  margin-left: 0.5rem;
+.timeline__marker {
+  width: 0.32rem;
+  height: 0.32rem;
+  border-radius: 50%;
+  background: var(--accent);
+}
+
+.timeline__link {
+  /* horizontal line = интервал междуБлоками */
+  flex: 0 0 auto;
+  width: 1rem;
+  height: 2px;
+  margin: 0 0.15rem;
+  background: var(--border);
+}
+
+.timeline__paused {
+  margin-left: 0.4rem;
   font-size: 0.7rem;
   color: var(--text-muted);
+  white-space: nowrap;
 }
 
 /* Basic result screen (ticket 09 enriches) */
