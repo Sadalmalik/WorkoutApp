@@ -83,7 +83,14 @@ export function SessionScreen({
   if (state.kind === 'loading') return null;
 
   if (state.kind === 'finished') {
-    return <WorkoutResultScreen summary={state.summary} onDone={goHome} />;
+    return (
+      <WorkoutResultScreen
+        summary={state.summary}
+        results={save.results}
+        exercises={save.exercises}
+        onDone={goHome}
+      />
+    );
   }
 
   if (state.kind === 'resume') {

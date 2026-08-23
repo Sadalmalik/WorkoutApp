@@ -11,6 +11,7 @@ import {
 } from '../router.ts';
 import { ExerciseListScreen } from './ExerciseListScreen.tsx';
 import { ExerciseEditorScreen } from './ExerciseEditorScreen.tsx';
+import { ExerciseProgress } from '../components/ExerciseProgress.tsx';
 
 /**
  * Container for the exercise-catalog area (`#/exercises` and `#/exercises/<id>`). Reads the
@@ -40,6 +41,8 @@ export function CatalogView({
       return null;
     }
 
+    const results = existing ? storage.load()?.results ?? [] : [];
+
     return (
       <ExerciseEditorScreen
         exercise={existing}
@@ -51,6 +54,9 @@ export function CatalogView({
           navigateToCatalog();
         }}
         onCancel={navigateToCatalog}
+        progress={
+          existing ? <ExerciseProgress exercise={existing} results={results} title="Прогресс" /> : undefined
+        }
       />
     );
   }

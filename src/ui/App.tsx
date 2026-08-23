@@ -15,19 +15,22 @@ import { useTheme } from './theme.ts';
 import { BottomNav } from './nav/BottomNav.tsx';
 import { BodyweightDialog } from './components/BodyweightDialog.tsx';
 import { ProgramPopup } from './components/ProgramPopup.tsx';
-import { ResultsScreen, SettingsScreen, BodyweightScreen } from './screens/index.tsx';
+import { SettingsScreen, BodyweightScreen } from './screens/index.tsx';
+import { ResultsScreen } from './screens/ResultsScreen.tsx';
 import { HomeScreen } from './screens/HomeScreen.tsx';
 import { SessionScreen } from './screens/SessionScreen.tsx';
 import { AdHocScreen } from './screens/AdHocScreen.tsx';
 import { CatalogView } from './screens/CatalogView.tsx';
 import { ProgramsView } from './screens/ProgramsView.tsx';
 
-/** Screens that need no core wiring (Home/Session/Ad-hoc are handled specially below). */
+/** Screens that need no core wiring (Home/Session/Ad-hoc/Results are handled specially below). */
 const STUB_SCREENS: Record<
-  Exclude<Route, typeof ROUTES.home | typeof ROUTES.adhoc | typeof ROUTES.settings>,
+  Exclude<
+    Route,
+    typeof ROUTES.home | typeof ROUTES.adhoc | typeof ROUTES.settings | typeof ROUTES.results
+  >,
   () => ReactElement
 > = {
-  [ROUTES.results]: ResultsScreen,
   [ROUTES.bodyweight]: BodyweightScreen,
 };
 
@@ -56,7 +59,10 @@ export function App({
   const programs = parseProgramRoute(hash);
   const session = isSessionRoute(hash);
   const StubScreen =
-    route === ROUTES.home || route === ROUTES.adhoc || route === ROUTES.settings
+    route === ROUTES.home ||
+    route === ROUTES.adhoc ||
+    route === ROUTES.settings ||
+    route === ROUTES.results
       ? null
       : STUB_SCREENS[route];
 
@@ -88,6 +94,8 @@ export function App({
           />
         ) : route === ROUTES.settings ? (
           <SettingsScreen save={save} clock={clock} />
+        ) : route === ROUTES.results ? (
+          <ResultsScreen results={save.results} exercises={save.exercises} />
         ) : StubScreen ? (
           <StubScreen />
         ) : (

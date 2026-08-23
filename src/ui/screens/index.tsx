@@ -12,10 +12,6 @@ import { navigateToCatalog, navigateToPrograms } from '../router.ts';
 
 export { HomeScreen } from './HomeScreen.tsx';
 
-export function ResultsScreen() {
-  return <StubScreen title="Results" note="Progress charts — tickets 09/10." />;
-}
-
 export function SettingsScreen({ save, clock }: { save: SaveData; clock: Clock }) {
   function download(doc: ExportDocument, prefix: string) {
     downloadJson(`${prefix}-${fileStamp(doc.exportedAt)}.json`, exportToJson(doc));
