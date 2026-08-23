@@ -1117,6 +1117,11 @@ body {
 }
 
 .setinput {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
 /* Ticket 09 — reports & charts */
 
 /* Report switcher reuses .chip; the active state is set via data-active (see .chip--on). */
@@ -1282,6 +1287,8 @@ body {
   clip: rect(0 0 0 0);
   white-space: nowrap;
   border: 0;
+}
+
 .exercise-progress__head {
   display: flex;
   flex-wrap: wrap;
