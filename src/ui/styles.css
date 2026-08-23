@@ -1,4 +1,8 @@
-/* Theme tokens. Light is the default on :root; dark overrides under [data-theme="dark"]. */
+/* Theme tokens. Light is the default on :root; dark overrides under [data-theme="dark"].
+   Accessibility (ticket 14): `--accent` and the four `--chart-line-N` tokens are additionally
+   overridden per colourblind palette under [data-palette="…"] (see the palette block below).
+   Palette selectors carry higher specificity than the bare dark block, so palette + theme
+   combine: theme drives the neutral surfaces, palette drives the accent + series hues. */
 :root {
   --bg: #f9fafb;
   --surface: #ffffff;
@@ -6,6 +10,12 @@
   --text-muted: #6b7280;
   --border: #e5e7eb;
   --accent: #2563eb;
+  /* Progress-chart series hues (line 0 tracks the accent). Distinguished by dash + marker
+     shape too (ProgressChart.LINE_STYLES), so colour is never the sole signal. */
+  --chart-line-0: var(--accent);
+  --chart-line-1: #f59e0b;
+  --chart-line-2: #10b981;
+  --chart-line-3: #ec4899;
   --nav-height: 4rem;
 }
 
@@ -16,6 +26,50 @@
   --text-muted: #9ca3af;
   --border: #1f2937;
   --accent: #60a5fa;
+}
+
+/* ── Colourblind palettes (ticket 14) ─────────────────────────────────────────────
+   Selected via Settings.colorblindPalette → data-palette on <html> (see ui/theme.ts).
+   Each palette redefines only the accent + the four chart-series hues; the neutral
+   surfaces stay under the theme. Hue sets are drawn from the Okabe–Ito colourblind-safe
+   palette and picked so the four series remain mutually distinguishable for that
+   deficiency. A base block covers light; a data-theme='dark' variant lightens the
+   accent for contrast on dark surfaces (higher specificity, so it wins the tie). */
+
+/* Protanopia (red-weak): lean on the blue↔orange/yellow axis, avoid red vs green. */
+:root[data-palette='protanopia'] {
+  --accent: #0072b2;
+  --chart-line-0: var(--accent);
+  --chart-line-1: #e69f00;
+  --chart-line-2: #56b4e9;
+  --chart-line-3: #d55e00;
+}
+:root[data-theme='dark'][data-palette='protanopia'] {
+  --accent: #4ea3d6;
+}
+
+/* Deuteranopia (green-weak): same blue↔orange strategy, tuned darker orange for line 3. */
+:root[data-palette='deuteranopia'] {
+  --accent: #0072b2;
+  --chart-line-0: var(--accent);
+  --chart-line-1: #e69f00;
+  --chart-line-2: #56b4e9;
+  --chart-line-3: #cc5500;
+}
+:root[data-theme='dark'][data-palette='deuteranopia'] {
+  --accent: #4ea3d6;
+}
+
+/* Tritanopia (blue-weak): avoid the blue↔yellow confusion, use red/green/pink/teal. */
+:root[data-palette='tritanopia'] {
+  --accent: #d55e00;
+  --chart-line-0: var(--accent);
+  --chart-line-1: #009e73;
+  --chart-line-2: #cc79a7;
+  --chart-line-3: #1b7837;
+}
+:root[data-theme='dark'][data-palette='tritanopia'] {
+  --accent: #f07f3c;
 }
 
 * {
@@ -463,6 +517,34 @@ body {
   display: flex;
   flex-direction: column;
   gap: 0.5rem;
+}
+
+/* Appearance fields (ticket 14): theme + colourblind palette pickers. */
+.settings__field {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.settings__field-label {
+  font-size: 0.95rem;
+  color: var(--text);
+}
+
+.settings__select {
+  flex: 0 1 12rem;
+  padding: 0.4rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.settings__select:focus-visible {
+  outline: 2px solid var(--accent);
 }
 
 /* Import flow (ticket 12) */
@@ -1411,18 +1493,19 @@ body {
   fill: currentColor;
 }
 
-/* Per-line colours; the dash pattern + marker shape carry the distinction too (ticket 14 tunes palettes). */
+/* Per-line colours come from palette-aware tokens; the dash pattern + marker shape carry the
+   distinction too (ProgressChart.LINE_STYLES), so colour is never the sole signal. */
 .progress-chart__line--0 {
-  color: var(--accent);
+  color: var(--chart-line-0);
 }
 .progress-chart__line--1 {
-  color: #f59e0b;
+  color: var(--chart-line-1);
 }
 .progress-chart__line--2 {
-  color: #10b981;
+  color: var(--chart-line-2);
 }
 .progress-chart__line--3 {
-  color: #ec4899;
+  color: var(--chart-line-3);
 }
 
 .progress-chart__legend {
@@ -1446,16 +1529,16 @@ body {
   color: inherit;
 }
 .progress-chart__legend-item.progress-chart__line--0 {
-  color: var(--accent);
+  color: var(--chart-line-0);
 }
 .progress-chart__legend-item.progress-chart__line--1 {
-  color: #f59e0b;
+  color: var(--chart-line-1);
 }
 .progress-chart__legend-item.progress-chart__line--2 {
-  color: #10b981;
+  color: var(--chart-line-2);
 }
 .progress-chart__legend-item.progress-chart__line--3 {
-  color: #ec4899;
+  color: var(--chart-line-3);
 }
 .progress-chart__legend-item span {
   color: var(--text);

@@ -43,6 +43,9 @@ export type {
 } from './model/index.ts';
 export { DEFAULT_SETTINGS, SCHEMA_VERSION, emptySaveData } from './model/index.ts';
 
+// User settings operations (ticket 14): partial-patch writer over SaveData.settings
+export { updateSettings } from './settings/index.ts';
+
 // Bodyweight log operations
 export {
   addBodyweightEntry,
