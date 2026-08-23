@@ -134,6 +134,15 @@ export {
   logAdHocResult,
 } from './session/index.ts';
 
+// Timeline view-model selectors (ticket 07)
+export type {
+  TimelineModel,
+  TimelineBlock,
+  TimelineDot,
+  TimelineBlockState,
+} from './session/index.ts';
+export { timelineModel, previewDeferredOrder } from './session/index.ts';
+
 // Import/export subsystem (ticket 11: export; ticket 12: import)
 export type {
   ExportKind,

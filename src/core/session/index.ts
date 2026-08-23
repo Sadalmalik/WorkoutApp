@@ -17,3 +17,11 @@ export {
   endAdHoc,
   logAdHocResult,
 } from './session.ts';
+
+export type {
+  TimelineModel,
+  TimelineBlock,
+  TimelineDot,
+  TimelineBlockState,
+} from './timeline.ts';
+export { timelineModel, previewDeferredOrder } from './timeline.ts';
