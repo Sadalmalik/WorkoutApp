@@ -16,9 +16,10 @@ import { navigate, ROUTES } from '../router.ts';
 import { WorkoutScreen } from './WorkoutScreen.tsx';
 import { WorkoutResultScreen } from './WorkoutResultScreen.tsx';
 import { ExercisePicker } from '../components/ExercisePicker.tsx';
+import { Timeline } from '../components/Timeline.tsx';
 import { SetInputPanel, ResultsTable, parseNum } from '../components/ResultsTable.tsx';
 import type { SetRow } from '../components/ResultsTable.tsx';
-import { startAdHoc } from '../../core/index.ts';
+import { startAdHoc, deferSessionBlock, timelineModel } from '../../core/index.ts';
 
 /**
  * Session container (ticket 05) — replaces the ticket-04 stub, keeping the `#/session` route.
@@ -156,6 +157,13 @@ export function SessionScreen({
     if (updated !== null) setState({ kind: 'active', session: updated });
   }
 
+  function handleDefer(blockId: string) {
+    deferSessionBlock(storage, blockId);
+    onChange();
+    const next = getSession(storage);
+    if (next !== null) setState({ kind: 'active', session: next });
+  }
+
   return (
     <>
       <ActiveWorkout
@@ -168,6 +176,7 @@ export function SessionScreen({
         onExit={() => navigate(ROUTES.home)}
         onAddAdHoc={() => setPicking(true)}
         onResumePlan={slot.isAdHoc ? resumePlan : undefined}
+        onDefer={handleDefer}
       />
       {picking ? (
         <ExercisePicker
@@ -217,6 +226,7 @@ function ActiveWorkout({
   onExit,
   onAddAdHoc,
   onResumePlan,
+  onDefer,
 }: {
   slot: ActiveSlot;
   session: Session;
@@ -227,6 +237,7 @@ function ActiveWorkout({
   onExit: () => void;
   onAddAdHoc: () => void;
   onResumePlan?: () => void;
+  onDefer: (blockId: string) => void;
 }) {
   const [weight, setWeight] = useState(slot.target ? String(slot.target.weight) : '');
   const [reps, setReps] = useState(slot.target ? String(slot.target.reps) : '');
@@ -301,7 +312,7 @@ function ActiveWorkout({
           }
         />
       }
-      timelineSlot={<PlanDots slot={slot} session={session} />}
+      timelineSlot={<Timeline model={timelineModel(session)} onDefer={onDefer} />}
       headerAction={
         onResumePlan ? (
           <button type="button" className="btn btn--sm btn--ghost" onClick={onResumePlan}>
@@ -314,22 +325,5 @@ function ActiveWorkout({
         )
       }
     />
-  );
-}
-
-/** Placeholder timeline (ticket 07 replaces): one dot per block, filled up to the cursor. */
-function PlanDots({ slot, session }: { slot: ActiveSlot; session: Session }) {
-  return (
-    <div className="plandots" aria-label="Прогресс по блокам">
-      {session.blockOrder.map((id, i) => (
-        <span
-          key={id}
-          className="plandots__dot"
-          data-done={!slot.isAdHoc && i < slot.blockIndex ? true : undefined}
-          data-current={!slot.isAdHoc && i === slot.blockIndex ? true : undefined}
-        />
-      ))}
-      {session.timelinePaused ? <span className="plandots__paused">приостановлен</span> : null}
-    </div>
   );
 }
