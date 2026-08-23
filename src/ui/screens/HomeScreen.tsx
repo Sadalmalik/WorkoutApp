@@ -32,6 +32,9 @@ export function HomeScreen({
 }) {
   const [launching, setLaunching] = useState(false);
   const status = homeState(save, clock);
+  // Pull-forward ("начать следующую") only makes sense for the hybrid scheduler. In a calendar
+  // schedule a rest day is fixed by date (story 31), so there is nothing to pull forward.
+  const isHybrid = save.activeProgram?.schedulerId === 'hybrid';
 
   if (launching || status.kind === 'no-program') {
     return (
@@ -75,9 +78,13 @@ export function HomeScreen({
 
       {status.kind === 'rest' ? (
         <HomeCard title="День отдыха" hint="Отдых по плану">
-          <button type="button" className="btn btn--ghost" onClick={skip}>
-            <SkipForward aria-hidden /> Начать следующую
-          </button>
+          {isHybrid ? (
+            <button type="button" className="btn btn--ghost" onClick={skip}>
+              <SkipForward aria-hidden /> Начать следующую
+            </button>
+          ) : (
+            <p className="screen__note">Следующая тренировка — по расписанию.</p>
+          )}
         </HomeCard>
       ) : null}
 
