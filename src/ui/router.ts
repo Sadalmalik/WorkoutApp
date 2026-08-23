@@ -34,9 +34,13 @@ export function currentRoute(): Route {
   return parseHash(window.location.hash);
 }
 
-/** Navigate to a route by setting the hash; this pushes a history entry. */
+/**
+ * Navigate to a route by setting the hash; this pushes a history entry. Compares against the raw
+ * hash (not {@link currentRoute}) so leaving a sub-route hash such as `#/session` — which
+ * {@link parseHash} collapses to the default route — still triggers the navigation.
+ */
 export function navigate(route: Route): void {
-  if (currentRoute() === route && window.location.hash !== '') return;
+  if (window.location.hash === `#${route}`) return;
   window.location.hash = route;
 }
 
