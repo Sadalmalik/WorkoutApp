@@ -155,7 +155,7 @@ describe('exportProgramShare', () => {
   });
 
   it('omits all personal and runtime state', () => {
-    const doc = exportProgramShare(populatedSave(), 0) as Record<string, unknown>;
+    const doc = exportProgramShare(populatedSave(), 0) as unknown as Record<string, unknown>;
     expect(doc.results).toBeUndefined();
     expect(doc.bodyweightLog).toBeUndefined();
     expect(doc.settings).toBeUndefined();

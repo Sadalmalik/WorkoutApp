@@ -24,11 +24,10 @@ import { ProgramsView } from './screens/ProgramsView.tsx';
 
 /** Screens that need no core wiring (Home/Session/Ad-hoc are handled specially below). */
 const STUB_SCREENS: Record<
-  Exclude<Route, typeof ROUTES.home | typeof ROUTES.adhoc>,
+  Exclude<Route, typeof ROUTES.home | typeof ROUTES.adhoc | typeof ROUTES.settings>,
   () => ReactElement
 > = {
   [ROUTES.results]: ResultsScreen,
-  [ROUTES.settings]: SettingsScreen,
   [ROUTES.bodyweight]: BodyweightScreen,
 };
 
@@ -57,7 +56,9 @@ export function App({
   const programs = parseProgramRoute(hash);
   const session = isSessionRoute(hash);
   const StubScreen =
-    route === ROUTES.home || route === ROUTES.adhoc ? null : STUB_SCREENS[route];
+    route === ROUTES.home || route === ROUTES.adhoc || route === ROUTES.settings
+      ? null
+      : STUB_SCREENS[route];
 
   const activeProgram = save.activeProgram;
   const activeProgramEntity = activeProgram
@@ -85,6 +86,8 @@ export function App({
             exercises={save.exercises}
             onChange={reload}
           />
+        ) : route === ROUTES.settings ? (
+          <SettingsScreen save={save} clock={clock} />
         ) : StubScreen ? (
           <StubScreen />
         ) : (
