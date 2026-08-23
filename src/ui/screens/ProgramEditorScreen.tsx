@@ -252,7 +252,7 @@ function WorkoutEditor({
         ))}
       </ol>
 
-      <button type="button" className="btn btn--ghost" onClick={() => setPickingBlock(true)}>
+      <button type="button" className="btn btn--add" onClick={() => setPickingBlock(true)}>
         <Plus aria-hidden /> Добавить блок
       </button>
 
@@ -324,7 +324,7 @@ function BlockEditor({
         ))}
       </ul>
 
-      <button type="button" className="btn btn--ghost btn--sm" onClick={() => setPickingExercise(true)}>
+      <button type="button" className="btn btn--add btn--sm" onClick={() => setPickingExercise(true)}>
         <Plus aria-hidden /> Упражнение {block.exercises.length >= 1 ? '(суперсет)' : ''}
       </button>
 

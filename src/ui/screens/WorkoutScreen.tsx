@@ -67,7 +67,7 @@ export function WorkoutScreen({
   headerAction,
 }: WorkoutScreenProps) {
   return (
-    <section className="workout">
+    <section className="workout-screen">
       {/* Compact header (top) */}
       <header className="workout__header">
         <button type="button" className="icon-btn" aria-label="Назад" onClick={onExit}>

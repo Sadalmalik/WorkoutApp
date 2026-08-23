@@ -226,8 +226,8 @@ body {
   display: inline-flex;
   align-items: center;
   gap: 0.35rem;
-  padding: 0.55rem 0.9rem;
-  border: 1px solid var(--border);
+  padding: 0.55rem 1rem;
+  border: 1px solid transparent;
   border-radius: 0.5rem;
   background: var(--surface);
   color: var(--text);
@@ -242,12 +242,22 @@ body {
 }
 
 .btn--ghost {
+  background: transparent;
+  border-color: var(--border);
+  color: var(--text-muted);
+}
+
+/* Dashed "add item" affordance (editor add-block / add-exercise buttons). */
+.btn--add {
+  background: transparent;
   border-style: dashed;
+  border-color: var(--border);
   color: var(--text-muted);
   align-self: flex-start;
 }
 
-.btn:disabled {
+.btn:disabled,
+.btn--primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
 }
@@ -350,30 +360,6 @@ body {
   display: flex;
   justify-content: flex-end;
   gap: 0.5rem;
-}
-
-.btn {
-  padding: 0.55rem 1rem;
-  font: inherit;
-  border-radius: 0.5rem;
-  border: 1px solid transparent;
-  cursor: pointer;
-}
-
-.btn--ghost {
-  background: transparent;
-  color: var(--text-muted);
-  border-color: var(--border);
-}
-
-.btn--primary {
-  background: var(--accent);
-  color: #ffffff;
-}
-
-.btn--primary:disabled {
-  opacity: 0.5;
-  cursor: not-allowed;
 }
 
 .catalog__item {
@@ -933,7 +919,7 @@ body {
 }
 
 /* ── Workout screen (ticket 05): fixed viewport, only the table scrolls ── */
-.workout {
+.workout-screen {
   flex: 1 1 auto;
   min-height: 0;
   display: flex;
