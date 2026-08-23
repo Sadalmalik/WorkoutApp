@@ -87,7 +87,7 @@ export function App({
             onChange={reload}
           />
         ) : route === ROUTES.settings ? (
-          <SettingsScreen save={save} clock={clock} />
+          <SettingsScreen save={save} clock={clock} storage={storage} onChange={reload} />
         ) : StubScreen ? (
           <StubScreen />
         ) : (

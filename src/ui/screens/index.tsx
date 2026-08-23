@@ -1,7 +1,8 @@
 import { ChevronRight, Download, Share2 } from 'lucide-react';
-import type { Clock, SaveData, ExportDocument } from '../../core/index.ts';
+import type { Clock, Storage, SaveData, ExportDocument } from '../../core/index.ts';
 import { exportFull, exportProgramShare, exportToJson } from '../../core/index.ts';
 import { StubScreen } from './StubScreen.tsx';
+import { ImportFlow } from './ImportFlow.tsx';
 import { navigateToCatalog, navigateToPrograms } from '../router.ts';
 
 /**
@@ -16,7 +17,17 @@ export function ResultsScreen() {
   return <StubScreen title="Results" note="Progress charts — tickets 09/10." />;
 }
 
-export function SettingsScreen({ save, clock }: { save: SaveData; clock: Clock }) {
+export function SettingsScreen({
+  save,
+  clock,
+  storage,
+  onChange,
+}: {
+  save: SaveData;
+  clock: Clock;
+  storage: Storage;
+  onChange: () => void;
+}) {
   function download(doc: ExportDocument, prefix: string) {
     downloadJson(`${prefix}-${fileStamp(doc.exportedAt)}.json`, exportToJson(doc));
   }
@@ -55,6 +66,13 @@ export function SettingsScreen({ save, clock }: { save: SaveData; clock: Clock }
       <p className="screen__note">
         Полный экспорт — резервная копия всех данных. «Программы и упражнения» — для обмена
         с друзьями (без результатов, веса тела и настроек).
+      </p>
+
+      <h2 className="settings__section-title">Импорт данных</h2>
+      <ImportFlow storage={storage} save={save} onImported={onChange} />
+      <p className="screen__note">
+        Импорт без затирания: сначала вопросы о совпадениях по имени, затем сводка изменений
+        с выбором политики. Результаты и вес тела объединяются, настройки берутся из файла.
       </p>
 
       <p className="screen__note">Тема и доступность — тикеты 05/12.</p>

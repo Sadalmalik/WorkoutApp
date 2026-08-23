@@ -23,8 +23,6 @@ import type {
   Exercise,
   Muscle,
   Program,
-  Result,
-  BodyweightEntry,
   DedupDecisions,
   MergePolicies,
 } from '../index.ts';
