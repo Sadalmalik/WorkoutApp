@@ -4,6 +4,9 @@ import react from '@vitejs/plugin-react';
 import { VitePWA } from 'vite-plugin-pwa';
 
 export default defineConfig({
+  // Relative base so one build works both from a GitHub Pages sub-path
+  // (https://<user>.github.io/WorkoutApp/) and from a local static server.
+  base: './',
   server: {
     port: 3000,
     host: '0.0.0.0',
@@ -20,8 +23,8 @@ export default defineConfig({
         theme_color: '#111827',
         background_color: '#111827',
         display: 'standalone',
-        start_url: '/',
-        scope: '/',
+        start_url: './',
+        scope: './',
         icons: [
           { src: 'pwa-192x192.png', sizes: '192x192', type: 'image/png' },
           { src: 'pwa-512x512.png', sizes: '512x512', type: 'image/png' },
