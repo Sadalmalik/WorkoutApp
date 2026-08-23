@@ -1,24 +1,24 @@
-I create this application with Google AI Studio.
+# Workout App v2
 
-I just storing it in git so i can see iteratinos as separate commits
+Offline-first PWA for showing workouts and tracking strength progress. All data lives in the
+browser (`localStorage`); moving data between devices and sharing programs is done via
+export/import files. No network backend.
 
-<div align="center">
-<img width="1200" height="475" alt="GHBanner" src="https://github.com/user-attachments/assets/0aa67016-6eaf-458a-adb2-6e31a0763ed6" />
-</div>
+See [`CONTEXT.md`](CONTEXT.md) for the domain glossary and `docs/adr/` for architecture decisions.
 
-# Run and deploy your AI Studio app
+## Architecture
 
-This contains everything you need to run your app locally.
+- `src/core/` — pure TypeScript engine, no React/DOM/`localStorage` imports. External effects go
+  through injected ports (`Clock`, `Storage`).
+- `src/ui/` — thin React shell over the core public API (hash router, bottom nav, screens).
 
-View your app in AI Studio: https://ai.studio/apps/drive/1HzWrzN6zCBTNsBra6wDEq_3TQAEORuK-
+## Scripts
 
-## Run Locally
-
-**Prerequisites:**  Node.js
-
-
-1. Install dependencies:
-   `npm install`
-2. Set the `GEMINI_API_KEY` in [.env.local](.env.local) to your Gemini API key
-3. Run the app:
-   `npm run dev`
+```
+npm run dev         # vite dev server
+npm run build       # tsc --noEmit && vite build
+npm run preview     # preview production build
+npm test            # vitest run
+npm run test:watch  # vitest (watch)
+npm run typecheck   # tsc --noEmit
+```
