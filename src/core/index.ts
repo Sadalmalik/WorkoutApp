@@ -132,6 +132,19 @@ export {
   logAdHocResult,
 } from './session/index.ts';
 
+// Reports subsystem (ADR 0002 / ticket 09): Report interface, exercise reports, day aggregation
+export type { Report, DataPoint, DaySet, ExerciseDayPoint, ReportDescriptor } from './reports/index.ts';
+export {
+  pickDaySet,
+  exerciseDayPoints,
+  maxWeightReport,
+  maxWeightRepsReport,
+  EXERCISE_REPORTS,
+} from './reports/index.ts';
+
+// Stats subsystem (ticket 09): session personal records and session statistics
+export type { RecordKind, PersonalRecord, SessionStats } from './stats/index.ts';
+export { detectPersonalRecords, sessionStats } from './stats/index.ts';
+
 // Strategy contracts (interfaces only; implementations arrive in later tickets)
-export type { Report, DataPoint } from './reports/report.ts';
 export type { Progression, ProgressionTarget } from './progression/progression.ts';
