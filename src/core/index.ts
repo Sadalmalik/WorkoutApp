@@ -23,7 +23,12 @@ export type {
   MuscleRef,
   Exercise,
   Program,
+  Plan,
+  PlanDay,
   Workout,
+  Block,
+  BlockExercise,
+  StaticTarget,
   ActiveProgram,
   SchedulerState,
   Result,
@@ -41,6 +46,27 @@ export {
   listBodyweight,
   removeBodyweightEntry,
 } from './bodyweight/index.ts';
+
+// Program operations: builders, validation, storage-backed CRUD
+export {
+  DEFAULT_SCHEDULER_ID,
+  BLOCK_DEFAULTS,
+  DEFAULT_BETWEEN_BLOCKS_REST,
+  DEFAULT_TARGET,
+  newBlockExercise,
+  newBlock,
+  newWorkout,
+  newRestDay,
+  newWorkoutDay,
+  newPlan,
+  newProgram,
+  validateProgram,
+  createProgram,
+  updateProgram,
+  getProgram,
+  listPrograms,
+  deleteProgram,
+} from './programs/index.ts';
 
 // Exercise catalog operations + search
 export type { ExerciseDraft } from './catalog/index.ts';

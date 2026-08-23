@@ -7,6 +7,9 @@
  * reports (09). Keep these minimal so later tickets can extend without churn.
  */
 
+import type { SchedulerId } from '../scheduler/scheduler.ts';
+import type { ProgressionTarget } from '../progression/progression.ts';
+
 /** Catalog entry: a muscle. Filled by the muscle-catalog ticket (Phase 2 UI). */
 export interface Muscle {
   id: string;
@@ -48,18 +51,102 @@ export interface Exercise {
   muscleRefs: MuscleRef[];
 }
 
-/** A training program (plans + rotation). Filled by the program-editor ticket. */
-export interface Program {
+/**
+ * A per-set static target for one exercise slot: weight (kg) + reps. Phase 1 progression is
+ * static (fixed weight/reps), see ADR 0003. The shape is deliberately the same as
+ * {@link ProgressionTarget} so Phase 2 can swap this field for a full progression grid on
+ * {@link BlockExercise} without changing consumers that only read `weight`/`reps`.
+ */
+export type StaticTarget = ProgressionTarget;
+
+/**
+ * One exercise occurrence inside a {@link Block}. Carries its own stable `id` (independent of
+ * the catalog `exerciseId`) so references survive re-linking on import (see CONTEXT.md →
+ * Сетка прогрессии, which lives on this slot in Phase 2).
+ */
+export interface BlockExercise {
+  /** Stable uuid v4 slot identity, used to re-link references on import; distinct from `exerciseId`. */
   id: string;
-  name: string;
+  /** Reference into the exercise catalog ({@link Exercise.id}). */
+  exerciseId: string;
+  /**
+   * Phase 1 static target ({weight, reps}). Phase 2 replaces this with a progression grid
+   * (see ADR 0003 / {@link Progression}); the field is kept progression-compatible in shape.
+   */
+  target: StaticTarget;
 }
 
 /**
- * A single training day resolved by a {@link Scheduler} from a {@link Program}: the ordered
- * blocks to perform now. Filled by the scheduler ticket (04). `null` there means a rest day.
+ * Structural unit of a {@link Workout} (see CONTEXT.md → Блок). Holds one or more exercises,
+ * the number of sets, and the two intra-block rest intervals. A block with two or more
+ * exercises is executed as a superset (A→B→A→B) — a superset is NOT a separate entity, it is
+ * defined purely by `exercises.length >= 2`.
+ */
+export interface Block {
+  /** Stable uuid v4 identity. */
+  id: string;
+  /** One or more exercise slots. Length >= 2 makes this block a superset. */
+  exercises: BlockExercise[];
+  /** Number of sets performed, >= 1. */
+  sets: number;
+  /** Rest between sets (`междуСетами`), seconds, >= 0. */
+  betweenSetsRest: number;
+  /** Rest between superset exercises (`междуУпражнениямиСуперсета`), seconds, >= 0. */
+  betweenSupersetExercisesRest: number;
+}
+
+/**
+ * One training day of a {@link Plan}: an ordered list of {@link Block}s plus the rest interval
+ * between blocks. This is a plan/description, not a performed fact (see CONTEXT.md → Тренировка
+ * vs Сессия).
  */
 export interface Workout {
+  /** Stable uuid v4 identity. */
   id: string;
+  /** Ordered blocks to perform. */
+  blocks: Block[];
+  /** Rest between blocks (`междуБлоками`), seconds, >= 0; preloads the timer. */
+  betweenBlocksRest: number;
+}
+
+/**
+ * One day of a {@link Plan}: either a rest day or a training day carrying a {@link Workout}
+ * (see CONTEXT.md → День отдыха / Тренировка). Modelled as a tagged union; days are positional
+ * (index within the plan is the identity), so there is no separate `id`.
+ */
+export type PlanDay =
+  | { kind: 'rest' }
+  | { kind: 'workout'; workout: Workout };
+
+/**
+ * A plan: a fixed-length sequence of days (see CONTEXT.md → План). The plan length in days is
+ * exactly `days.length`; each day is a rest day or a training day.
+ */
+export interface Plan {
+  /** Stable uuid v4 identity. */
+  id: string;
+  /** Ordered days; plan length in days = `days.length` (>= 1). */
+  days: PlanDay[];
+}
+
+/**
+ * A training program: the top planning unit (see CONTEXT.md → Программа). Holds plans and,
+ * in later phases, a rotation pattern over them. Phase 1 uses exactly one plan (the structure
+ * is an array so multi-plan rotation can arrive in Phase 2 without a shape change); the trivial
+ * rotation is "repeat the single plan".
+ */
+export interface Program {
+  /** Stable uuid v4 identity. */
+  id: string;
+  /** Display name; also the matching key on import. */
+  name: string;
+  /** Plans making up the program. Phase 1: exactly one; the array leaves room for rotation. */
+  plans: Plan[];
+  /**
+   * Recommended scheduler strategy (data only; see CONTEXT.md → Расписание). At launch the user
+   * picks a scheduler, defaulting to this one. Phase 1 ids: `'calendar'` | `'hybrid'`.
+   */
+  recommendedSchedulerId: SchedulerId;
 }
 
 /**
