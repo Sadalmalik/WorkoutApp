@@ -10,10 +10,6 @@ import { navigateToCatalog, navigateToPrograms } from '../router.ts';
 
 export { HomeScreen } from './HomeScreen.tsx';
 
-export function ResultsScreen() {
-  return <StubScreen title="Results" note="Progress charts — tickets 09/10." />;
-}
-
 export function SettingsScreen() {
   return (
     <section className="settings">

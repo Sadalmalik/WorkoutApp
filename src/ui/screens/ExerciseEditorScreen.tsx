@@ -1,4 +1,5 @@
 import { useId, useState } from 'react';
+import type { ReactNode } from 'react';
 import { ChevronLeft, Plus, X } from 'lucide-react';
 import type { Exercise, ExerciseDraft } from '../../core/index.ts';
 import { DEFAULT_WEIGHT_STEP } from '../../core/index.ts';
@@ -13,11 +14,14 @@ export function ExerciseEditorScreen({
   zones,
   onSave,
   onCancel,
+  progress,
 }: {
   exercise: Exercise | undefined;
   zones: string[];
   onSave: (draft: ExerciseDraft) => void;
   onCancel: () => void;
+  /** Progress chart for an existing exercise (ticket 09); omitted when creating a new one. */
+  progress?: ReactNode;
 }) {
   const zonesListId = useId();
   const [name, setName] = useState(exercise?.name ?? '');
@@ -162,6 +166,8 @@ export function ExerciseEditorScreen({
           </button>
         </div>
       </form>
+
+      {progress ? <div className="catalog__progress">{progress}</div> : null}
     </section>
   );
 }
