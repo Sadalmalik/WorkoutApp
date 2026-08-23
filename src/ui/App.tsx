@@ -1,8 +1,8 @@
-import { useMemo, useState } from 'react';
+import { useCallback, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import type { Storage, SaveData } from '../core/index.ts';
 import { emptySaveData } from '../core/index.ts';
-import { ROUTES, useRoute, type Route } from './router.ts';
+import { ROUTES, useRoute, useHash, parseCatalogRoute, type Route } from './router.ts';
 import { useTheme } from './theme.ts';
 import { BottomNav } from './nav/BottomNav.tsx';
 import {
@@ -12,6 +12,7 @@ import {
   BodyweightScreen,
   AdHocScreen,
 } from './screens/index.tsx';
+import { CatalogView } from './screens/CatalogView.tsx';
 
 const SCREENS: Record<Route, () => ReactElement> = {
   [ROUTES.home]: HomeScreen,
@@ -26,19 +27,28 @@ const SCREENS: Record<Route, () => ReactElement> = {
  * from settings, and renders the routed stub screen above the bottom navigation.
  */
 export function App({ storage }: { storage: Storage }) {
-  // Ticket 01 only reads settings from the save; later tickets add editing that writes back.
-  const [save] = useState<SaveData>(() => storage.load() ?? seedEmpty(storage));
+  const [save, setSave] = useState<SaveData>(() => storage.load() ?? seedEmpty(storage));
   const route = useRoute();
+  const hash = useHash();
   useTheme(save.settings.theme);
 
+  // Re-read the persisted save after a core mutation so views reflect the change.
+  const reload = useCallback(() => setSave(storage.load() ?? emptySaveData()), [storage]);
+
+  const catalog = parseCatalogRoute(hash);
   const Screen = useMemo(() => SCREENS[route], [route]);
 
   return (
     <div className="app">
       <main className="app__body">
-        <Screen />
+        {catalog ? (
+          <CatalogView storage={storage} exercises={save.exercises} onChange={reload} />
+        ) : (
+          <Screen />
+        )}
       </main>
-      <BottomNav active={route} />
+      {/* The catalog lives under Settings, so keep that tab highlighted while inside it. */}
+      <BottomNav active={catalog ? ROUTES.settings : route} />
     </div>
   );
 }

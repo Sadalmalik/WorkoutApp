@@ -1,4 +1,6 @@
+import { ChevronRight } from 'lucide-react';
 import { StubScreen } from './StubScreen.tsx';
+import { navigateToCatalog } from '../router.ts';
 
 /**
  * Stub screens for the five shell routes. Each is a labelled placeholder that later tickets
@@ -15,7 +17,18 @@ export function ResultsScreen() {
 }
 
 export function SettingsScreen() {
-  return <StubScreen title="Settings" note="Catalogs, programs, theme & accessibility — tickets 02/03/05/12." />;
+  return (
+    <section className="settings">
+      <h1 className="settings__title">Настройки</h1>
+      <nav className="settings__list" aria-label="Разделы настроек">
+        <button type="button" className="settings__row" onClick={navigateToCatalog}>
+          <span>Каталог упражнений</span>
+          <ChevronRight aria-hidden />
+        </button>
+      </nav>
+      <p className="screen__note">Программы, тема и доступность — тикеты 03/05/12.</p>
+    </section>
+  );
 }
 
 export function BodyweightScreen() {
