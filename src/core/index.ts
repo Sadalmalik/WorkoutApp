@@ -193,5 +193,21 @@ export {
 export type { RecordKind, PersonalRecord, SessionStats } from './stats/index.ts';
 export { detectPersonalRecords, sessionStats } from './stats/index.ts';
 
+// Rest timer subsystem (ticket 08): drift-free countdown core + place-based preset selector
+export type { TimerState, TimerPhase } from './timer/index.ts';
+export {
+  remainingMs,
+  createTimer,
+  timerPhase,
+  timerRemaining,
+  isExpired,
+  isRunning,
+  startTimer,
+  pauseTimer,
+  resetTimer,
+  addTime,
+  recommendedRestSeconds,
+} from './timer/index.ts';
+
 // Strategy contracts (interfaces only; implementations arrive in later tickets)
 export type { Progression, ProgressionTarget } from './progression/progression.ts';

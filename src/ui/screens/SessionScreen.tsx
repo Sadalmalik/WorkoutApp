@@ -19,7 +19,8 @@ import { ExercisePicker } from '../components/ExercisePicker.tsx';
 import { Timeline } from '../components/Timeline.tsx';
 import { SetInputPanel, ResultsTable, parseNum } from '../components/ResultsTable.tsx';
 import type { SetRow } from '../components/ResultsTable.tsx';
-import { startAdHoc, deferSessionBlock, timelineModel } from '../../core/index.ts';
+import { startAdHoc, deferSessionBlock, timelineModel, recommendedRestSeconds } from '../../core/index.ts';
+import { RestTimer } from '../components/RestTimer.tsx';
 
 /**
  * Session container (ticket 05) — replaces the ticket-04 stub, keeping the `#/session` route.
@@ -169,6 +170,7 @@ export function SessionScreen({
       <ActiveWorkout
         slot={slot}
         session={session}
+        clock={clock}
         weightStepFallback={DEFAULT_WEIGHT_STEP}
         onLog={handleLog}
         onEdit={handleEdit}
@@ -219,6 +221,7 @@ function ResumePrompt({ onContinue, onFinish }: { onContinue: () => void; onFini
 function ActiveWorkout({
   slot,
   session,
+  clock,
   weightStepFallback,
   onLog,
   onEdit,
@@ -230,6 +233,7 @@ function ActiveWorkout({
 }: {
   slot: ActiveSlot;
   session: Session;
+  clock: Clock;
   weightStepFallback: number;
   onLog: (weight: number, reps: number) => void;
   onEdit: (index: number, weight: number, reps: number) => void;
@@ -271,6 +275,13 @@ function ActiveWorkout({
     .filter(({ set }) => set.exerciseId === slot.exerciseId)
     .map(({ set, index }) => ({ index, weight: set.weight, reps: set.reps }));
 
+  // Preload the rest timer with the recommended interval for the current cursor place; the key
+  // changes as the cursor moves, re-preloading the timer between sets / superset exercises / blocks.
+  const restSeconds = recommendedRestSeconds(session);
+  const placeKey = slot.isAdHoc
+    ? 'adhoc'
+    : `plan:${session.cursor.block}:${session.cursor.exercise}:${session.cursor.set}`;
+
   const name = slot.exercise?.name ?? '(упражнение удалено)';
   const targetText = slot.target !== null ? `${slot.target.weight} кг × ${slot.target.reps}` : 'Внеплановое';
   const progressText = slot.isAdHoc
@@ -288,6 +299,7 @@ function ActiveWorkout({
         videoUrl: slot.exercise?.videoLinks[0] ?? null,
         restHint: `${session.workout.betweenBlocksRest} с`,
       }}
+      timerSlot={<RestTimer clock={clock} presetSeconds={restSeconds} placeKey={placeKey} />}
       inputSlot={
         <SetInputPanel
           weight={weight}
