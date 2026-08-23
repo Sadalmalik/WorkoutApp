@@ -132,6 +132,22 @@ export {
   logAdHocResult,
 } from './session/index.ts';
 
+// Import/export subsystem (ticket 11: export; ticket 12: import)
+export type {
+  ExportKind,
+  ExportEnvelope,
+  FullExport,
+  ProgramShareExport,
+  ExportDocument,
+} from './import-export/index.ts';
+export {
+  exportFull,
+  exportProgramShare,
+  collectExerciseIds,
+  collectMuscleIds,
+  exportToJson,
+} from './import-export/index.ts';
+
 // Strategy contracts (interfaces only; implementations arrive in later tickets)
 export type { Report, DataPoint } from './reports/report.ts';
 export type { Progression, ProgressionTarget } from './progression/progression.ts';
