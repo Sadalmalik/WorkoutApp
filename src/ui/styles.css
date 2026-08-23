@@ -1425,3 +1425,126 @@ body {
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+
+/* Rest timer (ticket 08). Circle with the start/pause button inside it, then the ±1/10/30/60
+   increment chips. Phases (idle/running/paused/finished) differ by icon shape + label, not colour
+   alone — ticket 14 tunes the palette on the `[data-phase]` hooks below. */
+.rest-timer {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.4rem;
+  width: 100%;
+}
+
+.rest-timer__dial {
+  position: relative;
+  width: 120px;
+  height: 120px;
+}
+
+.rest-timer__ring {
+  width: 100%;
+  height: 100%;
+  transform: rotate(-90deg); /* start the progress arc at 12 o'clock */
+}
+
+.rest-timer__ring-track {
+  fill: none;
+  stroke: var(--border);
+  stroke-width: 8;
+}
+
+.rest-timer__ring-progress {
+  fill: none;
+  stroke: var(--accent);
+  stroke-width: 8;
+  stroke-linecap: round;
+  transition: stroke-dashoffset 0.25s linear;
+}
+
+.rest-timer[data-phase='finished'] .rest-timer__ring-progress {
+  stroke: var(--text-muted);
+}
+
+/* The start/pause control lives INSIDE the ring (spec: экономия места). */
+.rest-timer__center {
+  position: absolute;
+  inset: 12px;
+  border: none;
+  border-radius: 50%;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0;
+}
+
+.rest-timer__time {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+  line-height: 1;
+}
+
+.rest-timer__action {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.2rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+.rest-timer__action svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
+
+.rest-timer__adjust {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 0.3rem;
+  width: 100%;
+  max-width: 20rem;
+}
+
+.rest-timer__chip {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  gap: 0.1rem;
+  padding: 0.35rem 0.25rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--text);
+  font-size: 0.85rem;
+  font-variant-numeric: tabular-nums;
+  cursor: pointer;
+}
+
+.rest-timer__chip svg {
+  width: 0.8rem;
+  height: 0.8rem;
+}
+
+.rest-timer__reset {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.25rem;
+  border: none;
+  background: none;
+  color: var(--text-muted);
+  font-size: 0.8rem;
+  cursor: pointer;
+  padding: 0.1rem 0.3rem;
+}
+
+.rest-timer__reset svg {
+  width: 0.85rem;
+  height: 0.85rem;
+}
