@@ -178,6 +178,14 @@ export {
   applyImport,
   runImport,
 } from './import-export/index.ts';
+export type { V1ImportInput } from './import-export/index.ts';
+export {
+  parseCsv,
+  parseV1Exercises,
+  parseV1Results,
+  parseV1Date,
+  buildV1ImportDocument,
+} from './import-export/index.ts';
 
 // Reports subsystem (ADR 0002 / ticket 09): Report interface, exercise reports, day aggregation
 export type { Report, DataPoint, DaySet, ExerciseDayPoint, ReportDescriptor } from './reports/index.ts';

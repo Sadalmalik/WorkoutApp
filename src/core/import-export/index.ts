@@ -37,3 +37,12 @@ export {
   applyImport,
   runImport,
 } from './import.ts';
+
+export type { V1ImportInput } from './v1-csv.ts';
+export {
+  parseCsv,
+  parseV1Exercises,
+  parseV1Results,
+  parseV1Date,
+  buildV1ImportDocument,
+} from './v1-csv.ts';

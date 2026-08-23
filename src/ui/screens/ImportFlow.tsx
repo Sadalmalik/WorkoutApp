@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Upload } from 'lucide-react';
+import { Upload, FileSpreadsheet } from 'lucide-react';
 import type {
   Storage,
   SaveData,
@@ -18,6 +18,7 @@ import {
   collectDedupItems,
   buildImportDiff,
   defaultMergePolicies,
+  buildV1ImportDocument,
   runImport,
   ImportError,
 } from '../../core/index.ts';
@@ -58,19 +59,23 @@ export function ImportFlow({
 }) {
   const [stage, setStage] = useState<Stage>({ name: 'idle' });
 
+  /** Convergence point for both entries (JSON file, v1 CSV): a document → the dedup/diff wizard. */
+  function startFromDoc(doc: ExportDocument) {
+    const items = collectDedupItems(doc, save);
+    if (items.length > 0) {
+      setStage({ name: 'dedup', doc, items, decisions: {} });
+    } else {
+      setStage({ name: 'diff', doc, decisions: {}, diff: buildImportDiff(doc, save, {}), policies: defaultMergePolicies() });
+    }
+  }
+
   async function onPickFile(event: React.ChangeEvent<HTMLInputElement>) {
     const file = event.target.files?.[0];
     event.target.value = ''; // allow re-picking the same file
     if (!file) return;
 
     try {
-      const doc = parseImportDocument(await file.text());
-      const items = collectDedupItems(doc, save);
-      if (items.length > 0) {
-        setStage({ name: 'dedup', doc, items, decisions: {} });
-      } else {
-        setStage({ name: 'diff', doc, decisions: {}, diff: buildImportDiff(doc, save, {}), policies: defaultMergePolicies() });
-      }
+      startFromDoc(parseImportDocument(await file.text()));
     } catch (err) {
       const message = err instanceof ImportError ? err.message : 'Не удалось прочитать файл.';
       setStage({ name: 'error', message });
@@ -124,10 +129,17 @@ export function ImportFlow({
   return (
     <div className="import" aria-label="Импорт данных">
       {stage.name === 'idle' || stage.name === 'error' ? (
-        <label className="btn btn--ghost import__pick">
-          <Upload aria-hidden /> Импортировать из файла
-          <input type="file" accept="application/json,.json" onChange={onPickFile} hidden />
-        </label>
+        <>
+          <label className="btn btn--ghost import__pick">
+            <Upload aria-hidden /> Импортировать из файла
+            <input type="file" accept="application/json,.json" onChange={onPickFile} hidden />
+          </label>
+          <CsvStep
+            save={save}
+            onStart={startFromDoc}
+            onError={(message) => setStage({ name: 'error', message })}
+          />
+        </>
       ) : null}
 
       {stage.name === 'error' ? <p className="import__error">{stage.message}</p> : null}
@@ -156,6 +168,85 @@ export function ImportFlow({
         </div>
       ) : null}
     </div>
+  );
+}
+
+/**
+ * Migration from v1 CSV exports. Reads the «Exercise List» CSV (required) and, when the history
+ * toggle is on, the «Results» CSV (optional), builds a full-export document in the pure core
+ * ({@link buildV1ImportDocument}, passing the current `save` so it never clobbers live
+ * settings/session), and hands it to the same dedup/diff wizard via `onStart`.
+ */
+function CsvStep({
+  save,
+  onStart,
+  onError,
+}: {
+  save: SaveData;
+  onStart: (doc: ExportDocument) => void;
+  onError: (message: string) => void;
+}) {
+  const [exercisesCsv, setExercisesCsv] = useState<string | null>(null);
+  const [resultsCsv, setResultsCsv] = useState<string | null>(null);
+  const [importResults, setImportResults] = useState(false);
+
+  async function readInto(
+    event: React.ChangeEvent<HTMLInputElement>,
+    set: (text: string | null) => void,
+  ) {
+    const file = event.target.files?.[0];
+    set(file ? await file.text() : null);
+  }
+
+  function proceed() {
+    if (exercisesCsv === null) return;
+    try {
+      const doc = buildV1ImportDocument(
+        { exercisesCsv, resultsCsv, importResults, exportedAt: Date.now() },
+        save,
+      );
+      onStart(doc);
+    } catch {
+      onError('Не удалось разобрать CSV из v1.');
+    }
+  }
+
+  return (
+    <details className="import__csv">
+      <summary className="import__csv-summary">
+        <FileSpreadsheet aria-hidden /> Импорт из v1 (CSV)
+      </summary>
+
+      <label className="import__csv-field">
+        <span>Список упражнений (Exercise List)</span>
+        <input type="file" accept=".csv,text/csv" onChange={(e) => readInto(e, setExercisesCsv)} />
+      </label>
+
+      <label className="import__csv-check">
+        <input
+          type="checkbox"
+          checked={importResults}
+          onChange={(e) => setImportResults(e.target.checked)}
+        />{' '}
+        Импортировать историю результатов
+      </label>
+
+      {importResults ? (
+        <label className="import__csv-field">
+          <span>Результаты (Results)</span>
+          <input type="file" accept=".csv,text/csv" onChange={(e) => readInto(e, setResultsCsv)} />
+        </label>
+      ) : null}
+
+      <button
+        type="button"
+        className="btn btn--primary"
+        disabled={exercisesCsv === null}
+        onClick={proceed}
+      >
+        Далее
+      </button>
+    </details>
   );
 }
 
