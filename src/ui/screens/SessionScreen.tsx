@@ -7,6 +7,8 @@ import {
   startSession,
   abandonSession,
   logSet,
+  editSessionSet,
+  removeSessionSet,
   activeSlot,
   endAdHoc,
 } from '../../core/index.ts';
@@ -14,6 +16,8 @@ import { navigate, ROUTES } from '../router.ts';
 import { WorkoutScreen } from './WorkoutScreen.tsx';
 import { WorkoutResultScreen } from './WorkoutResultScreen.tsx';
 import { ExercisePicker } from '../components/ExercisePicker.tsx';
+import { SetInputPanel, ResultsTable, parseNum } from '../components/ResultsTable.tsx';
+import type { SetRow } from '../components/ResultsTable.tsx';
 import { startAdHoc } from '../../core/index.ts';
 
 /**
@@ -120,6 +124,18 @@ export function SessionScreen({
     setState({ kind: 'active', session: next! });
   }
 
+  function handleEdit(index: number, weight: number, reps: number) {
+    const next = editSessionSet(storage, index, weight, reps);
+    onChange();
+    if (next !== null) setState({ kind: 'active', session: next });
+  }
+
+  function handleRemove(index: number) {
+    const next = removeSessionSet(storage, index);
+    onChange();
+    if (next !== null) setState({ kind: 'active', session: next });
+  }
+
   function pickAdHoc(exerciseId: string) {
     setPicking(false);
     const updated = startAdHoc(storage, clock, exerciseId);
@@ -140,6 +156,8 @@ export function SessionScreen({
         session={session}
         weightStepFallback={DEFAULT_WEIGHT_STEP}
         onLog={handleLog}
+        onEdit={handleEdit}
+        onRemove={handleRemove}
         onExit={() => navigate(ROUTES.home)}
         onAddAdHoc={() => setPicking(true)}
         onResumePlan={slot.isAdHoc ? resumePlan : undefined}
@@ -176,12 +194,19 @@ function ResumePrompt({ onContinue, onFinish }: { onContinue: () => void; onFini
   );
 }
 
-/** Adapts an {@link ActiveSlot} to the presentational {@link WorkoutScreen}, holding basic input. */
+/**
+ * Adapts an {@link ActiveSlot} to the presentational {@link WorkoutScreen}, driving the ticket-06
+ * widget: it owns the weight/reps input buffers and enforces the v1 UX rule — after logging, the
+ * weight is kept for the next set while the reps are cleared. Edit/remove are delegated to the
+ * container (core `editSessionSet`/`removeSessionSet`).
+ */
 function ActiveWorkout({
   slot,
   session,
   weightStepFallback,
   onLog,
+  onEdit,
+  onRemove,
   onExit,
   onAddAdHoc,
   onResumePlan,
@@ -190,24 +215,43 @@ function ActiveWorkout({
   session: Session;
   weightStepFallback: number;
   onLog: (weight: number, reps: number) => void;
+  onEdit: (index: number, weight: number, reps: number) => void;
+  onRemove: (index: number) => void;
   onExit: () => void;
   onAddAdHoc: () => void;
   onResumePlan?: () => void;
 }) {
-  const [weight, setWeight] = useState(slot.target?.weight ?? 0);
-  const [reps, setReps] = useState(slot.target?.reps ?? 1);
+  const [weight, setWeight] = useState(slot.target ? String(slot.target.weight) : '');
+  const [reps, setReps] = useState(slot.target ? String(slot.target.reps) : '');
 
-  // Reset the inputs to the slot's target when the exercise changes (weight is kept across sets).
+  // Reset the inputs to the slot's target when the exercise changes (weight is kept across sets of
+  // the same exercise, so the key intentionally excludes the set index).
   const slotKey = `${slot.isAdHoc ? 'adhoc' : 'plan'}:${slot.blockIndex}:${slot.exerciseId}`;
   const lastKey = useRef<string | null>(null);
   useEffect(() => {
     if (lastKey.current === slotKey) return;
     lastKey.current = slotKey;
-    if (slot.target !== null) {
-      setWeight(slot.target.weight);
-      setReps(slot.target.reps);
-    }
+    setWeight(slot.target ? String(slot.target.weight) : '');
+    setReps(slot.target ? String(slot.target.reps) : '');
   }, [slotKey, slot.target]);
+
+  const weightStep = slot.exercise?.equipmentWeightStep ?? weightStepFallback;
+  const parsedWeight = parseNum(weight);
+  const parsedReps = parseNum(reps);
+  const canAdd = parsedWeight !== null && parsedWeight >= 0 && parsedReps !== null && parsedReps >= 1;
+
+  function add() {
+    if (parsedWeight === null || parsedReps === null) return;
+    onLog(parsedWeight, parsedReps);
+    // v1 UX: keep the weight for the next set, clear the reps.
+    setReps('');
+  }
+
+  // Logged sets of the current exercise, carrying their global index for core edit/remove.
+  const rows: SetRow[] = session.loggedSets
+    .map((s, index) => ({ set: s, index }))
+    .filter(({ set }) => set.exerciseId === slot.exerciseId)
+    .map(({ set, index }) => ({ index, weight: set.weight, reps: set.reps }));
 
   const name = slot.exercise?.name ?? '(упражнение удалено)';
   const targetText = slot.target !== null ? `${slot.target.weight} кг × ${slot.target.reps}` : 'Внеплановое';
@@ -226,17 +270,30 @@ function ActiveWorkout({
         videoUrl: slot.exercise?.videoLinks[0] ?? null,
         restHint: `${session.workout.betweenBlocksRest} с`,
       }}
-      input={{
-        weight,
-        reps,
-        weightStep: slot.exercise?.equipmentWeightStep ?? weightStepFallback,
-        onWeight: setWeight,
-        onReps: setReps,
-      }}
-      onLog={() => onLog(weight, reps)}
-      logLabel={slot.isAdHoc ? 'Записать (внеплановое)' : 'Записать сет'}
+      inputSlot={
+        <SetInputPanel
+          weight={weight}
+          reps={reps}
+          weightStep={weightStep}
+          onWeight={setWeight}
+          onReps={setReps}
+          onAdd={add}
+          canAdd={canAdd}
+          addLabel={slot.isAdHoc ? 'Записать (внеплановое)' : 'Добавить сет'}
+        />
+      }
       onExit={onExit}
-      tableSlot={<SessionSetList slot={slot} session={session} />}
+      tableSlot={
+        <ResultsTable
+          rows={rows}
+          weightStep={weightStep}
+          onEdit={onEdit}
+          onRemove={onRemove}
+          emptyNote={
+            slot.isAdHoc ? 'Внеплановые сеты не отображаются здесь' : 'Пока нет записанных сетов'
+          }
+        />
+      }
       timelineSlot={<PlanDots slot={slot} session={session} />}
       headerAction={
         onResumePlan ? (
@@ -250,26 +307,6 @@ function ActiveWorkout({
         )
       }
     />
-  );
-}
-
-/** Placeholder results table (ticket 06 replaces): this session's logged sets, newest last. */
-function SessionSetList({ slot, session }: { slot: ActiveSlot; session: Session }) {
-  const rows = session.loggedSets.filter((s) => s.exerciseId === slot.exerciseId);
-  if (rows.length === 0) {
-    return <p className="workout__slot-note workout__slot-note--center">Пока нет сетов (место под таблицу — тикет 06)</p>;
-  }
-  return (
-    <ul className="setlist" aria-label="Записанные сеты">
-      {rows.map((s, i) => (
-        <li key={i} className="setlist__row">
-          <span className="setlist__idx">{i + 1}</span>
-          <span className="setlist__val">
-            {s.weight} кг × {s.reps}
-          </span>
-        </li>
-      ))}
-    </ul>
   );
 }
 

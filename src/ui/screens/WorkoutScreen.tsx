@@ -14,7 +14,8 @@ import { ChevronLeft, Minus, Plus, Check, Video } from 'lucide-react';
  * - `tableSlot` — **ticket 06** results table (edit/delete of the current session). It is the only
  *   region with internal scroll.
  * - `timelineSlot` — **ticket 07** timeline (block dots, defer, paused marker).
- * The `input` block and the submit button are the **basic** logging UI that ticket 06 replaces.
+ * - `inputSlot` — **ticket 06** logging panel (weight/reps entry + "add set"). When provided it
+ *   replaces the basic `input`+submit region; the `input`/`onLog` props are then unused.
  */
 export interface WorkoutScreenProps {
   header: {
@@ -34,16 +35,18 @@ export interface WorkoutScreenProps {
   tableSlot?: ReactNode;
   /** Ticket 07 timeline. */
   timelineSlot?: ReactNode;
-  /** Basic weight/reps input (ticket 06 replaces). */
-  input: {
+  /** Ticket 06 logging panel; when set, replaces the basic {@link input}+submit region. */
+  inputSlot?: ReactNode;
+  /** Basic weight/reps input (used only when {@link inputSlot} is absent). */
+  input?: {
     weight: number;
     reps: number;
     weightStep: number;
     onWeight: (value: number) => void;
     onReps: (value: number) => void;
   };
-  /** Log the current set. */
-  onLog: () => void;
+  /** Log the current set (used only when {@link inputSlot} is absent). */
+  onLog?: () => void;
   logLabel?: string;
   /** Leave the screen (session is persisted). */
   onExit: () => void;
@@ -56,6 +59,7 @@ export function WorkoutScreen({
   timerSlot,
   tableSlot,
   timelineSlot,
+  inputSlot,
   input,
   onLog,
   logLabel = 'Записать сет',
@@ -100,24 +104,36 @@ export function WorkoutScreen({
         )}
       </div>
 
-      {/* Input (basic; ticket 06 replaces) */}
-      <div className="workout__input">
-        <Stepper
-          label="Вес, кг"
-          value={input.weight}
-          step={input.weightStep}
-          min={0}
-          onChange={input.onWeight}
-        />
-        <Stepper label="Повторы" value={input.reps} step={1} min={0} onChange={input.onReps} />
-      </div>
-
-      {/* Submit */}
-      <div className="workout__submit">
-        <button type="button" className="btn btn--primary workout__log" onClick={onLog}>
-          <Check aria-hidden /> {logLabel}
-        </button>
-      </div>
+      {/* Logging panel: ticket 06 widget when provided, else the basic ticket-05 input+submit. */}
+      {inputSlot ? (
+        <div className="workout__input-slot" data-slot="input">
+          {inputSlot}
+        </div>
+      ) : (
+        <>
+          <div className="workout__input">
+            <Stepper
+              label="Вес, кг"
+              value={input?.weight ?? 0}
+              step={input?.weightStep ?? 1}
+              min={0}
+              onChange={(v) => input?.onWeight(v)}
+            />
+            <Stepper
+              label="Повторы"
+              value={input?.reps ?? 0}
+              step={1}
+              min={0}
+              onChange={(v) => input?.onReps(v)}
+            />
+          </div>
+          <div className="workout__submit">
+            <button type="button" className="btn btn--primary workout__log" onClick={onLog}>
+              <Check aria-hidden /> {logLabel}
+            </button>
+          </div>
+        </>
+      )}
 
       {/* Results table (ticket 06) — the only region that scrolls */}
       <div className="workout__table" data-slot="table">
