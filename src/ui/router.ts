@@ -46,6 +46,52 @@ export function subscribe(listener: () => void): () => void {
   return () => window.removeEventListener('hashchange', listener);
 }
 
+/**
+ * Exercise-catalog sub-routes, layered on top of the five top-level nav routes without
+ * enlarging the {@link Route} enum. `#/exercises` is the list; `#/exercises/<id>` is the editor,
+ * where the sentinel id {@link EXERCISE_NEW} means "create a new exercise".
+ */
+export type CatalogRoute = { kind: 'list' } | { kind: 'editor'; id: string };
+
+/** Hash base for the catalog area. */
+export const CATALOG_PATH = '/exercises';
+
+/** Editor id sentinel meaning "new exercise". */
+export const EXERCISE_NEW = 'new';
+
+/** Parse a raw `location.hash` into a {@link CatalogRoute}, or `null` if it is not a catalog hash. */
+export function parseCatalogRoute(hash: string): CatalogRoute | null {
+  const path = hash.replace(/^#/, '');
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  if (normalized === CATALOG_PATH) return { kind: 'list' };
+  if (normalized.startsWith(`${CATALOG_PATH}/`)) {
+    const id = normalized.slice(CATALOG_PATH.length + 1);
+    if (id !== '') return { kind: 'editor', id };
+  }
+  return null;
+}
+
+/** Navigate to the exercise list. */
+export function navigateToCatalog(): void {
+  window.location.hash = CATALOG_PATH;
+}
+
+/** Navigate to the editor for `id` (or {@link EXERCISE_NEW} to create). */
+export function navigateToExercise(id: string): void {
+  window.location.hash = `${CATALOG_PATH}/${id}`;
+}
+
+/** React hook: the raw `location.hash`, re-read on Back/Forward or any navigation. */
+export function useHash(): string {
+  const [hash, setHash] = useState<string>(() => window.location.hash);
+  useEffect(() => {
+    const update = () => setHash(window.location.hash);
+    update();
+    return subscribe(update);
+  }, []);
+  return hash;
+}
+
 /** React hook: returns the current route and re-renders on Back/Forward or `navigate`. */
 export function useRoute(): Route {
   const [route, setRoute] = useState<Route>(currentRoute);
