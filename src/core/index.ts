@@ -34,6 +34,13 @@ export type {
 } from './model/index.ts';
 export { DEFAULT_SETTINGS, SCHEMA_VERSION, emptySaveData } from './model/index.ts';
 
+// Bodyweight log operations
+export {
+  addBodyweightEntry,
+  listBodyweight,
+  removeBodyweightEntry,
+} from './bodyweight/index.ts';
+
 // Strategy contracts (interfaces only; implementations arrive in later tickets)
 export type { Scheduler, SchedulerId } from './scheduler/scheduler.ts';
 export type { Report, DataPoint } from './reports/report.ts';

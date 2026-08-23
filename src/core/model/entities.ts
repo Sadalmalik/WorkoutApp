@@ -55,9 +55,19 @@ export interface Result {
   id: string;
 }
 
-/** A bodyweight log entry (weight + date). Filled by the bodyweight-log ticket. */
+/**
+ * A single bodyweight measurement (the "Лог веса тела" / bodyweight log; see CONTEXT.md).
+ *
+ * Append-only entries; the app never edits an existing measurement in place, it records a new
+ * one. Ordered by {@link BodyweightEntry.date} when read for charts (Phase 2). Units are always
+ * kilograms (SaveData invariant #4).
+ */
 export interface BodyweightEntry {
   id: string;
+  /** Measured bodyweight in kilograms. */
+  weight: number;
+  /** When the measurement was taken, epoch milliseconds (from the injected `Clock`). */
+  date: number;
 }
 
 /** The current unfinished workout session; survives reload and day change. Filled by ticket 06. */
