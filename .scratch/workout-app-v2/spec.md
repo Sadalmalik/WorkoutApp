@@ -1,6 +1,6 @@
 # Spec: Workout App v2.0 — Фаза 1
 
-Status: ready-for-agent
+Status: done
 
 Долговечные проектные решения — в [CONTEXT.md](../../CONTEXT.md) (глоссарий) и ADR: [0001 расписание](../../docs/adr/0001-scheduling-model.md), [0002 отчёты](../../docs/adr/0002-report-abstraction.md), [0003 прогрессия](../../docs/adr/0003-progression-model.md). Термины ниже используются в значении глоссария.
 
