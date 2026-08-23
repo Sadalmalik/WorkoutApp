@@ -147,6 +147,26 @@ export {
   collectMuscleIds,
   exportToJson,
 } from './import-export/index.ts';
+export type {
+  NamedKind,
+  DedupDecision,
+  DedupItem,
+  DedupDecisions,
+  DiffStatus,
+  MergePolicy,
+  DiffItem,
+  ImportDiff,
+  MergePolicies,
+} from './import-export/index.ts';
+export {
+  ImportError,
+  parseImportDocument,
+  collectDedupItems,
+  buildImportDiff,
+  defaultMergePolicies,
+  applyImport,
+  runImport,
+} from './import-export/index.ts';
 
 // Strategy contracts (interfaces only; implementations arrive in later tickets)
 export type { Report, DataPoint } from './reports/report.ts';
