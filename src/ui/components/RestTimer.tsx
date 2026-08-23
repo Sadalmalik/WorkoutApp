@@ -12,7 +12,7 @@ import {
   resetTimer,
   addTime,
 } from '../../core/index.ts';
-import { RestTimerAudio, vibrateEndOfRest, notifyEndOfRest } from './restTimerSignal.ts';
+import { RestTimerAudio, vibrateEndOfRest, notifyEndOfRest, ensureNotifyPermission } from './restTimerSignal.ts';
 
 /**
  * Rest timer widget (ticket 08) — the circle-with-inner-button control that fills {@link timerSlot}.
@@ -21,8 +21,13 @@ import { RestTimerAudio, vibrateEndOfRest, notifyEndOfRest } from './restTimerSi
  * component only renders it and repaints. While running, a 250 ms interval forces a re-render, but it
  * never advances a counter — every frame recomputes the remaining time from the injected clock, so
  * the display cannot drift and a return from a backgrounded tab immediately shows the correct
- * (possibly expired) state. On the running→finished edge it fires the mandatory sound + vibration
- * signal (system notification is a best-effort stretch — see {@link notifyEndOfRest}).
+ * (possibly expired) state.
+ *
+ * The mandatory end-of-rest sound (spec:188) must fire even with the tab backgrounded, where the
+ * poll is throttled. So the signal is NOT tied to the poll detecting the running→finished edge:
+ * whenever the timer changes it is scheduled on the timer's absolute deadline — the beep via Web
+ * Audio (queued on the audio clock, immune to background throttling) and vibration + best-effort
+ * notification via a `setTimeout`. The poll drives only the visual display.
  *
  * Start / pause / finished are differentiated by icon SHAPE and text label, not colour alone, so the
  * control stays legible before ticket 14 tunes the palette.
@@ -47,7 +52,6 @@ export function RestTimer({ clock, presetSeconds, placeKey }: RestTimerProps) {
   const [timer, setTimer] = useState<TimerState>(() => createTimer(presetMs));
   const [, forceTick] = useState(0);
   const audioRef = useRef<RestTimerAudio | null>(null);
-  const prevPhase = useRef<TimerPhase>('idle');
 
   // Preload the recommended interval when the place changes, unless a countdown is running.
   useEffect(() => {
@@ -65,15 +69,32 @@ export function RestTimer({ clock, presetSeconds, placeKey }: RestTimerProps) {
     return () => window.clearInterval(id);
   }, [phase]);
 
-  // Fire the end-of-rest signal exactly once, on the running→finished edge.
+  // Schedule the mandatory end-of-rest signal on the timer's ABSOLUTE deadline rather than waiting
+  // for the poll to notice expiry. Web Audio playback queued on the audio clock is not throttled in
+  // a backgrounded tab, so the beep fires on time even when this component is frozen; vibration and
+  // the (best-effort) notification ride a setTimeout. Rescheduled whenever the timer changes
+  // (start / pause / reset / ±adjust); natural expiry leaves `timer` untouched, so the queued signal
+  // is never cancelled out from under itself. The 250 ms poll below drives only the visual display.
   useEffect(() => {
-    if (phase === 'finished' && prevPhase.current === 'running') {
-      audioRef.current?.beep();
+    const audio = audioRef.current;
+    if (!isRunning(timer)) {
+      audio?.cancelScheduled();
+      return;
+    }
+    const remainingMs = timerRemaining(timer, clock.now());
+    if (remainingMs <= 0) return;
+
+    audio?.scheduleBeep(remainingMs / 1000);
+    const sideId = window.setTimeout(() => {
       vibrateEndOfRest();
       notifyEndOfRest();
-    }
-    prevPhase.current = phase;
-  }, [phase]);
+    }, remainingMs);
+
+    return () => {
+      audio?.cancelScheduled();
+      window.clearTimeout(sideId);
+    };
+  }, [timer, clock]);
 
   // Release the audio context on unmount.
   useEffect(() => () => audioRef.current?.dispose(), []);
@@ -82,6 +103,8 @@ export function RestTimer({ clock, presetSeconds, placeKey }: RestTimerProps) {
     // AudioContext must be created/resumed from a user gesture (autoplay policy).
     if (audioRef.current === null) audioRef.current = new RestTimerAudio();
     audioRef.current.arm();
+    // Same user gesture: ask for notification permission so notifyEndOfRest can fire (story 24).
+    ensureNotifyPermission();
     setTimer((t) => startTimer(t, clock.now()));
   }
 
