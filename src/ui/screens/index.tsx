@@ -41,7 +41,3 @@ export function BodyweightScreen() {
     />
   );
 }
-
-export function AdHocScreen() {
-  return <StubScreen title="Ad-hoc exercise" note="Off-plan exercise flow — later ticket." />;
-}

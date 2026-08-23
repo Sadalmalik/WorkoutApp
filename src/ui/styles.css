@@ -729,3 +729,230 @@ body {
   flex-direction: column;
   align-items: stretch;
 }
+
+/* ── Workout screen (ticket 05): fixed viewport, only the table scrolls ── */
+.workout {
+  flex: 1 1 auto;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.workout__header {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--border);
+}
+
+.workout__title-wrap {
+  flex: 1 1 auto;
+  min-width: 0;
+}
+
+.workout__name {
+  margin: 0;
+  font-size: 1.1rem;
+  font-weight: 700;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.workout__sub {
+  margin: 0.1rem 0 0;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem;
+  font-size: 0.8rem;
+  color: var(--text-muted);
+}
+
+.workout__target {
+  color: var(--text);
+  font-weight: 600;
+}
+
+.workout__timer,
+.workout__timeline {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: 0.5rem 0.75rem;
+}
+
+.workout__timeline {
+  border-top: 1px solid var(--border);
+}
+
+.workout__slot-note {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}
+
+.workout__slot-note--center {
+  display: block;
+  text-align: center;
+  margin: 1rem auto;
+}
+
+.workout__input {
+  flex: 0 0 auto;
+  display: flex;
+  gap: 0.75rem;
+  padding: 0.5rem 0.75rem;
+}
+
+.workout__submit {
+  flex: 0 0 auto;
+  padding: 0 0.75rem 0.5rem;
+}
+
+.workout__log {
+  width: 100%;
+  justify-content: center;
+  padding: 0.7rem;
+  font-size: 1rem;
+}
+
+.workout__table {
+  flex: 1 1 auto;
+  min-height: 0;
+  overflow-y: auto;
+  padding: 0.25rem 0.75rem;
+  border-top: 1px solid var(--border);
+}
+
+/* Basic −/value/+ stepper (ticket 06 replaces this whole input block) */
+.stepper {
+  flex: 1 1 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.stepper__label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+  text-align: center;
+}
+
+.stepper__row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.4rem;
+}
+
+.stepper__btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 2.75rem;
+  height: 2.75rem;
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  color: var(--text);
+  cursor: pointer;
+}
+
+.stepper__btn svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.stepper__value {
+  flex: 1 1 auto;
+  text-align: center;
+  font-size: 1.25rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Placeholder set list (ticket 06 slot) */
+.setlist {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.setlist__row {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  padding: 0.35rem 0.5rem;
+  border: 1px solid var(--border);
+  border-radius: 0.4rem;
+}
+
+.setlist__idx {
+  width: 1.5rem;
+  color: var(--text-muted);
+  font-variant-numeric: tabular-nums;
+}
+
+.setlist__val {
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+}
+
+/* Placeholder timeline dots (ticket 07 slot) */
+.plandots {
+  display: flex;
+  align-items: center;
+  gap: 0.4rem;
+}
+
+.plandots__dot {
+  width: 0.7rem;
+  height: 0.7rem;
+  border-radius: 50%;
+  border: 2px solid var(--text-muted);
+}
+
+.plandots__dot[data-done] {
+  background: var(--text-muted);
+}
+
+.plandots__dot[data-current] {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--accent) 30%, transparent);
+}
+
+.plandots__paused {
+  margin-left: 0.5rem;
+  font-size: 0.7rem;
+  color: var(--text-muted);
+}
+
+/* Basic result screen (ticket 09 enriches) */
+.result__summary {
+  display: flex;
+  gap: 1.5rem;
+  justify-content: center;
+}
+
+.result__stat {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+}
+
+.result__stat-value {
+  font-size: 1.5rem;
+  font-weight: 700;
+  font-variant-numeric: tabular-nums;
+}
+
+.result__stat-label {
+  font-size: 0.75rem;
+  color: var(--text-muted);
+}

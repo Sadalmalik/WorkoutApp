@@ -15,23 +15,21 @@ import { useTheme } from './theme.ts';
 import { BottomNav } from './nav/BottomNav.tsx';
 import { BodyweightDialog } from './components/BodyweightDialog.tsx';
 import { ProgramPopup } from './components/ProgramPopup.tsx';
-import {
-  ResultsScreen,
-  SettingsScreen,
-  BodyweightScreen,
-  AdHocScreen,
-} from './screens/index.tsx';
+import { ResultsScreen, SettingsScreen, BodyweightScreen } from './screens/index.tsx';
 import { HomeScreen } from './screens/HomeScreen.tsx';
-import { SessionStubScreen } from './screens/SessionStubScreen.tsx';
+import { SessionScreen } from './screens/SessionScreen.tsx';
+import { AdHocScreen } from './screens/AdHocScreen.tsx';
 import { CatalogView } from './screens/CatalogView.tsx';
 import { ProgramsView } from './screens/ProgramsView.tsx';
 
-/** Screens that need no core wiring (Home and Session are handled specially below). */
-const STUB_SCREENS: Record<Exclude<Route, typeof ROUTES.home>, () => ReactElement> = {
+/** Screens that need no core wiring (Home/Session/Ad-hoc are handled specially below). */
+const STUB_SCREENS: Record<
+  Exclude<Route, typeof ROUTES.home | typeof ROUTES.adhoc>,
+  () => ReactElement
+> = {
   [ROUTES.results]: ResultsScreen,
   [ROUTES.settings]: SettingsScreen,
   [ROUTES.bodyweight]: BodyweightScreen,
-  [ROUTES.adhoc]: AdHocScreen,
 };
 
 /**
@@ -58,7 +56,8 @@ export function App({
   const catalog = parseCatalogRoute(hash);
   const programs = parseProgramRoute(hash);
   const session = isSessionRoute(hash);
-  const StubScreen = route === ROUTES.home ? null : STUB_SCREENS[route];
+  const StubScreen =
+    route === ROUTES.home || route === ROUTES.adhoc ? null : STUB_SCREENS[route];
 
   const activeProgram = save.activeProgram;
   const activeProgramEntity = activeProgram
@@ -78,7 +77,14 @@ export function App({
             onChange={reload}
           />
         ) : session ? (
-          <SessionStubScreen storage={storage} clock={clock} onChange={reload} />
+          <SessionScreen storage={storage} clock={clock} save={save} onChange={reload} />
+        ) : route === ROUTES.adhoc ? (
+          <AdHocScreen
+            storage={storage}
+            clock={clock}
+            exercises={save.exercises}
+            onChange={reload}
+          />
         ) : StubScreen ? (
           <StubScreen />
         ) : (
