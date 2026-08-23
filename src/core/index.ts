@@ -158,6 +158,26 @@ export {
   collectMuscleIds,
   exportToJson,
 } from './import-export/index.ts';
+export type {
+  NamedKind,
+  DedupDecision,
+  DedupItem,
+  DedupDecisions,
+  DiffStatus,
+  MergePolicy,
+  DiffItem,
+  ImportDiff,
+  MergePolicies,
+} from './import-export/index.ts';
+export {
+  ImportError,
+  parseImportDocument,
+  collectDedupItems,
+  buildImportDiff,
+  defaultMergePolicies,
+  applyImport,
+  runImport,
+} from './import-export/index.ts';
 
 // Reports subsystem (ADR 0002 / ticket 09): Report interface, exercise reports, day aggregation
 export type { Report, DataPoint, DaySet, ExerciseDayPoint, ReportDescriptor } from './reports/index.ts';
