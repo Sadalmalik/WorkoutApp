@@ -315,6 +315,8 @@ body {
 .btn--primary:disabled {
   opacity: 0.5;
   cursor: not-allowed;
+}
+
 .catalog__item {
   width: 100%;
   display: flex;
@@ -444,4 +446,218 @@ body {
   color: var(--text);
   font: inherit;
   cursor: pointer;
+}
+
+/* Program editor */
+.program-editor__daycount {
+  max-width: 8rem;
+}
+
+.field--num {
+  min-width: 0;
+}
+
+.field--num .input {
+  max-width: 11rem;
+}
+
+.day-list,
+.block-list,
+.slot-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.day {
+  border: 1px solid var(--border);
+  border-radius: 0.6rem;
+  background: var(--surface);
+  padding: 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.day--rest {
+  opacity: 0.85;
+}
+
+.day__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.day__title {
+  font-weight: 700;
+}
+
+.day__toggle {
+  display: flex;
+  gap: 0.25rem;
+}
+
+.chip {
+  padding: 0.3rem 0.7rem;
+  font: inherit;
+  font-size: 0.85rem;
+  border: 1px solid var(--border);
+  border-radius: 999px;
+  background: transparent;
+  color: var(--text-muted);
+  cursor: pointer;
+}
+
+.chip--on {
+  background: var(--accent);
+  border-color: var(--accent);
+  color: #ffffff;
+}
+
+.workout {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+}
+
+.block {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--bg);
+  padding: 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.block__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.block__title {
+  font-weight: 600;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.block__badge {
+  font-size: 0.7rem;
+  font-weight: 700;
+  text-transform: uppercase;
+  letter-spacing: 0.03em;
+  color: var(--accent);
+  border: 1px solid var(--accent);
+  border-radius: 999px;
+  padding: 0.05rem 0.4rem;
+}
+
+.block__params {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.slot {
+  border: 1px solid var(--border);
+  border-radius: 0.5rem;
+  background: var(--surface);
+  padding: 0.5rem 0.6rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.slot__info {
+  display: flex;
+  flex-direction: column;
+  gap: 0.15rem;
+}
+
+.slot__name {
+  font-weight: 600;
+}
+
+.slot__meta {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.85rem;
+}
+
+.slot__video {
+  color: var(--accent);
+  text-decoration: none;
+}
+
+.slot__video:hover {
+  text-decoration: underline;
+}
+
+.slot__target {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  gap: 0.5rem;
+}
+
+.btn--sm {
+  padding: 0.35rem 0.7rem;
+  font-size: 0.85rem;
+  align-self: flex-start;
+}
+
+.program-editor__errors {
+  list-style: none;
+  margin: 0;
+  padding: 0.6rem 0.75rem;
+  border: 1px solid #dc2626;
+  border-radius: 0.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+/* Exercise picker modal */
+.picker {
+  max-width: 26rem;
+  max-height: 80vh;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.picker__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+}
+
+.picker__title {
+  margin: 0;
+  font-size: 1.15rem;
+  font-weight: 700;
+}
+
+.picker__list {
+  overflow-y: auto;
+}
+
+.picker__meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.picker__videos {
+  font-size: 0.8rem;
+  color: var(--text-muted);
 }

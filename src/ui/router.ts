@@ -81,6 +81,41 @@ export function navigateToExercise(id: string): void {
   window.location.hash = `${CATALOG_PATH}/${id}`;
 }
 
+/**
+ * Program-editor sub-routes, layered on the top-level nav routes just like the catalog area.
+ * `#/programs` is the list; `#/programs/<id>` is the editor, where the sentinel id
+ * {@link PROGRAM_NEW} means "create a new program".
+ */
+export type ProgramRoute = { kind: 'list' } | { kind: 'editor'; id: string };
+
+/** Hash base for the program area. */
+export const PROGRAMS_PATH = '/programs';
+
+/** Editor id sentinel meaning "new program". */
+export const PROGRAM_NEW = 'new';
+
+/** Parse a raw `location.hash` into a {@link ProgramRoute}, or `null` if it is not a program hash. */
+export function parseProgramRoute(hash: string): ProgramRoute | null {
+  const path = hash.replace(/^#/, '');
+  const normalized = path.startsWith('/') ? path : `/${path}`;
+  if (normalized === PROGRAMS_PATH) return { kind: 'list' };
+  if (normalized.startsWith(`${PROGRAMS_PATH}/`)) {
+    const id = normalized.slice(PROGRAMS_PATH.length + 1);
+    if (id !== '') return { kind: 'editor', id };
+  }
+  return null;
+}
+
+/** Navigate to the program list. */
+export function navigateToPrograms(): void {
+  window.location.hash = PROGRAMS_PATH;
+}
+
+/** Navigate to the editor for `id` (or {@link PROGRAM_NEW} to create). */
+export function navigateToProgram(id: string): void {
+  window.location.hash = `${PROGRAMS_PATH}/${id}`;
+}
+
 /** React hook: the raw `location.hash`, re-read on Back/Forward or any navigation. */
 export function useHash(): string {
   const [hash, setHash] = useState<string>(() => window.location.hash);

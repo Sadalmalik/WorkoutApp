@@ -2,7 +2,14 @@ import { useCallback, useMemo, useState } from 'react';
 import type { ReactElement } from 'react';
 import type { Clock, Storage, SaveData } from '../core/index.ts';
 import { emptySaveData, SystemClock } from '../core/index.ts';
-import { ROUTES, useRoute, useHash, parseCatalogRoute, type Route } from './router.ts';
+import {
+  ROUTES,
+  useRoute,
+  useHash,
+  parseCatalogRoute,
+  parseProgramRoute,
+  type Route,
+} from './router.ts';
 import { useTheme } from './theme.ts';
 import { BottomNav } from './nav/BottomNav.tsx';
 import { BodyweightDialog } from './components/BodyweightDialog.tsx';
@@ -14,6 +21,7 @@ import {
   AdHocScreen,
 } from './screens/index.tsx';
 import { CatalogView } from './screens/CatalogView.tsx';
+import { ProgramsView } from './screens/ProgramsView.tsx';
 
 const SCREENS: Record<Route, () => ReactElement> = {
   [ROUTES.home]: HomeScreen,
@@ -44,6 +52,7 @@ export function App({
   const reload = useCallback(() => setSave(storage.load() ?? emptySaveData()), [storage]);
 
   const catalog = parseCatalogRoute(hash);
+  const programs = parseProgramRoute(hash);
   const Screen = useMemo(() => SCREENS[route], [route]);
 
   return (
@@ -51,13 +60,20 @@ export function App({
       <main className="app__body">
         {catalog ? (
           <CatalogView storage={storage} exercises={save.exercises} onChange={reload} />
+        ) : programs ? (
+          <ProgramsView
+            storage={storage}
+            programs={save.programs}
+            exercises={save.exercises}
+            onChange={reload}
+          />
         ) : (
           <Screen />
         )}
       </main>
-      {/* The catalog lives under Settings, so keep that tab highlighted while inside it. */}
+      {/* The catalog and program areas live under Settings, so keep that tab highlighted inside them. */}
       <BottomNav
-        active={catalog ? ROUTES.settings : route}
+        active={catalog || programs ? ROUTES.settings : route}
         onBodyweight={() => setBodyweightOpen(true)}
       />
       {bodyweightOpen ? (
