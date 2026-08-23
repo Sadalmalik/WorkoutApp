@@ -4,7 +4,7 @@
 
 **Blocked by:** None (can start immediately)
 
-**Status:** ready-for-agent
+**Status:** done
 
 - [ ] Код v1 (Google Sheets/Forms, queue-сервис) удалён; приложение собирается и грузится как устанавливаемая PWA с офлайн-оболочкой
 - [ ] Ядро не импортирует React/DOM/localStorage; все эффекты идут через порты `Clock` и `Storage`; оба адаптера (localStorage, in-memory) реализованы
